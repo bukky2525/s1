@@ -18,22 +18,26 @@
         height: 100vh;
       }
 
-      /* 90度回転のスタイル - 最優先 */
+      /* 90度回転のスタイル - シンプルで確実な方法 */
       #unity-container {
         position: fixed !important;
-        top: 0 !important;
-        left: 0 !important;
-        width: 100vw !important;
-        height: 100vh !important;
-        transform: rotate(90deg) translate(-100vh, 0) !important;
-        transform-origin: 0 0 !important;
+        top: 50% !important;
+        left: 50% !important;
+        width: 100vh !important;
+        height: 100vw !important;
+        transform: translate(-50%, -50%) rotate(90deg) !important;
+        transform-origin: center center !important;
         overflow: hidden !important;
+        z-index: 1000 !important;
+        /* デバッグ用の境界線 */
+        border: 2px solid red !important;
+        background: blue !important;
       }
 
       /* キャンバスのサイズ調整 */
       #unity-canvas {
-        width: 100vh !important;
-        height: 100vw !important;
+        width: 100% !important;
+        height: 100% !important;
         background: #231F20 !important;
         display: block !important;
         margin: 0 !important;
@@ -134,15 +138,33 @@
       var warningBanner = document.querySelector("#unity-warning");
 
       // 90度回転のデバッグ情報
-      console.log('=== 90度回転デバッグ情報 ===');
-      console.log('Container element:', container);
-      console.log('Container transform:', window.getComputedStyle(container).transform);
-      console.log('Container width:', window.getComputedStyle(container).width);
-      console.log('Container height:', window.getComputedStyle(container).height);
-      console.log('Screen size:', window.screen.width, 'x', window.screen.height);
-      console.log('Window size:', window.innerWidth, 'x', window.innerHeight);
-      console.log('Device pixel ratio:', window.devicePixelRatio);
-      console.log('=== デバッグ情報終了 ===');
+      setTimeout(function() {
+        console.log('=== 90度回転デバッグ情報 ===');
+        console.log('Container element:', container);
+        console.log('Container visible:', container.offsetWidth > 0 && container.offsetHeight > 0);
+        console.log('Container position:', container.getBoundingClientRect());
+        const style = window.getComputedStyle(container);
+        console.log('Container transform:', style.transform);
+        console.log('Container width:', style.width);
+        console.log('Container height:', style.height);
+        console.log('Container position style:', style.position);
+        console.log('Container top:', style.top);
+        console.log('Container left:', style.left);
+        console.log('Screen size:', window.screen.width, 'x', window.screen.height);
+        console.log('Window size:', window.innerWidth, 'x', window.innerHeight);
+        console.log('Device pixel ratio:', window.devicePixelRatio);
+        console.log('=== デバッグ情報終了 ===');
+        
+        // 90度回転が見えない場合の緊急対処
+        if (container.getBoundingClientRect().width === 0) {
+          console.warn('Container not visible! Applying fallback styles...');
+          container.style.setProperty('transform', 'none', 'important');
+          container.style.setProperty('width', '100vw', 'important');
+          container.style.setProperty('height', '100vh', 'important');
+          container.style.setProperty('top', '0', 'important');
+          container.style.setProperty('left', '0', 'important');
+        }
+      }, 1000);
 
       // Shows a temporary message banner/ribbon for a few seconds, or
       // a permanent error message on top of the canvas if type=='error'.
