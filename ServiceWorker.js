@@ -5,7 +5,6 @@ const contentToCache = [
     "Build/WebGL_Build.data",
     "Build/WebGL_Build.wasm",
     "TemplateData/style.css"
-
 ];
 
 self.addEventListener('install', function (e) {
@@ -19,15 +18,27 @@ self.addEventListener('install', function (e) {
 });
 
 self.addEventListener('fetch', function (e) {
-    e.respondWith((async function () {
-      let response = await caches.match(e.request);
-      console.log(`[Service Worker] Fetching resource: ${e.request.url}`);
-      if (response) { return response; }
+    // Chrome拡張機能やサポートされていないスキームのリクエストをフィルタリング
+    if (e.request.url.startsWith('chrome-extension:') || 
+        e.request.url.startsWith('moz-extension:') ||
+        e.request.url.startsWith('webkit-extension:')) {
+        return;
+    }
 
-      response = await fetch(e.request);
-      const cache = await caches.open(cacheName);
-      console.log(`[Service Worker] Caching new resource: ${e.request.url}`);
-      cache.put(e.request, response.clone());
-      return response;
+    e.respondWith((async function () {
+      try {
+        let response = await caches.match(e.request);
+        console.log(`[Service Worker] Fetching resource: ${e.request.url}`);
+        if (response) { return response; }
+
+        response = await fetch(e.request);
+        const cache = await caches.open(cacheName);
+        console.log(`[Service Worker] Caching new resource: ${e.request.url}`);
+        cache.put(e.request, response.clone());
+        return response;
+      } catch (error) {
+        console.log(`[Service Worker] Fetch failed: ${error}`);
+        return fetch(e.request);
+      }
     })());
 });
