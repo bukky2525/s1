@@ -8,7 +8,6 @@
     <link rel="shortcut icon" href="TemplateData/favicon.ico">
     <link rel="manifest" href="manifest.webmanifest">
     <style>
-      /* 繝夲ｿｽE繧ｸ蜈ｨ菴難ｿｽE繧ｹ繧ｿ繧､繝ｫ險ｭ螳・*/
       body {
         padding: 0;
         margin: 0;
@@ -18,39 +17,6 @@
         height: 100vh;
         font-family: Arial, sans-serif;
       }
-
-      /* 繧ｹ繧ｿ繝ｼ繝医が繝ｼ繝撰ｿｽE繝ｬ繧､ */
-      #start-overlay {
-        position: fixed;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        background: rgba(0, 0, 0, 0.8);
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        z-index: 9999;
-        color: white;
-        text-align: center;
-      }
-
-      #start-button {
-        padding: 20px 40px;
-        font-size: 18px;
-        background: #007acc;
-        color: white;
-        border: none;
-        border-radius: 10px;
-        cursor: pointer;
-        transition: background 0.3s;
-      }
-
-      #start-button:hover {
-        background: #005a9e;
-      }
-
-      /* 90蠎ｦ蝗櫁ｻ｢縺ｮ繧ｹ繧ｿ繧､繝ｫ */
       #unity-container {
         position: fixed !important;
         top: 50% !important;
@@ -62,8 +28,6 @@
         overflow: hidden !important;
         z-index: 1000 !important;
       }
-
-      /* 繧ｭ繝｣繝ｳ繝舌せ縺ｮ繧ｵ繧､繧ｺ險ｭ螳・*/
       #unity-canvas {
         width: 100% !important;
         height: 100% !important;
@@ -72,8 +36,6 @@
         margin: 0 !important;
         padding: 0 !important;
       }
-
-      /* 繝ｭ繝ｼ繝・・ｽ・ｽ繝ｳ繧ｰ隕∫ｴ縺ｮ繧ｹ繧ｿ繧､繝ｫ */
       #unity-loading-bar {
         position: absolute;
         left: 50%;
@@ -81,14 +43,12 @@
         transform: translate(-50%, -50%);
         display: none;
       }
-
       #unity-logo {
         width: 154px;
         height: 130px;
         background: url('TemplateData/unity-logo-dark.png') no-repeat center;
         background-size: contain;
       }
-
       #unity-progress-bar-empty {
         margin-left: auto;
         margin-right: auto;
@@ -98,7 +58,6 @@
         background: url('TemplateData/progress-bar-empty-dark.png') no-repeat center;
         background-size: contain;
       }
-
       #unity-progress-bar-full {
         width: 0%;
         height: 18px;
@@ -106,7 +65,6 @@
         background: url('TemplateData/progress-bar-full-dark.png') no-repeat center;
         background-size: contain;
       }
-
       #unity-warning {
         position: absolute;
         left: 50%;
@@ -117,8 +75,6 @@
         color: black;
         border-radius: 5px;
       }
-
-      /* 邵ｦ逕ｻ髱｢縺ｧ縺ｮ繝｡繝・・ｽ・ｽ繝ｼ繧ｸ陦ｨ遉ｺ */
       @media (max-width: 768px) and (orientation: portrait) {
         #rotation-message {
           position: fixed;
@@ -136,14 +92,10 @@
     </style>
   </head>
   <body>
-    <!-- 髻ｳ螢ｰ髢句ｧ狗畑縺ｮ繧ｪ繝ｼ繝撰ｿｽE繝ｬ繧､ -->
-
-    <!-- 逕ｻ髱｢蝗櫁ｻ｢繝｡繝・・ｽ・ｽ繝ｼ繧ｸ -->
     <div id="rotation-message" style="display: none;">
-      <h3>逕ｻ髱｢繧呈ｨｪ蜷代″縺ｫ縺励※縺上□縺輔＞</h3>
-      <p>譛驕ｩ縺ｪ繧ｲ繝ｼ繝菴馴ｨ薙◆繧√↓遶ｯ譛ｫ繧呈ｨｪ蜷代″縺ｫ縺励※縺上□縺輔＞</p>
+      <h3>画面を横向きにしてください</h3>
+      <p>最適なゲーム体験のために端末を横向きにしてください</p>
     </div>
-
     <div id="unity-container">
       <canvas id="unity-canvas" width=1280 height=720 tabindex="-1"></canvas>
       <div id="unity-loading-bar">
@@ -154,25 +106,16 @@
       </div>
       <div id="unity-warning"> </div>
     </div>
-
     <script>
-      // 繧ｰ繝ｭ繝ｼ繝舌Ν螟画焚
-      var gameStarted = false;
       var audioContextResumed = false;
-
-      // AudioContext 縺ｮ蝠城｡後ｒ隗｣豎ｺ縺吶ｋ髢｢謨ｰ
       function resumeAudioContext() {
         if (audioContextResumed) return Promise.resolve();
-        
         return new Promise((resolve) => {
-          // AudioContext 縺ｮ蜀埼幕繧定ｩｦ陦・
           const tryResumeAudio = () => {
             try {
-              // Web Audio API 縺悟茜逕ｨ蜿ｯ閭ｽ縺九メ繧ｧ繝・・ｽ・ｽ
               if (window.AudioContext || window.webkitAudioContext) {
                 const AudioContext = window.AudioContext || window.webkitAudioContext;
                 if (window.unityAudioContext) {
-                  // Unity 縺ｮ AudioContext 繧抵ｿｽE髢・
                   if (window.unityAudioContext.state === 'suspended') {
                     window.unityAudioContext.resume().then(() => {
                       console.log('Unity AudioContext resumed successfully');
@@ -180,14 +123,13 @@
                       resolve();
                     }).catch((error) => {
                       console.warn('Failed to resume Unity AudioContext:', error);
-                      resolve(); // 繧ｨ繝ｩ繝ｼ縺ｧ繧らｶ夊｡・
+                      resolve();
                     });
                   } else {
                     audioContextResumed = true;
                     resolve();
                   }
                 } else {
-                  // Unity 縺ｮ AudioContext 縺後∪縺菴懶ｿｽE縺輔ｌ縺ｦ縺・・ｽ・ｽ縺・・ｽ・ｽ蜷・
                   audioContextResumed = true;
                   resolve();
                 }
@@ -197,49 +139,21 @@
               }
             } catch (error) {
               console.warn('Audio resume error:', error);
-              resolve(); // 繧ｨ繝ｩ繝ｼ縺ｧ繧らｶ夊｡・
+              resolve();
             }
           };
-
           tryResumeAudio();
         });
       }
-
-      // 繧ｲ繝ｼ繝髢句ｧ具ｿｽE逅・
-      function startGame() {
-        if (gameStarted) return;
-
-        console.log('Starting game...');
-        gameStarted = true;
-
-        // 繧ｪ繝ｼ繝撰ｿｽE繝ｬ繧､繧帝國縺・
-        const overlay = document.getElementById('start-overlay');
-        overlay.style.display = 'none';
-
-        // AudioContext 繧抵ｿｽE髢・
-        resumeAudioContext().then(() => {
-          console.log('Audio context ready');
-          
-          // Unity 繧ｲ繝ｼ繝繧偵Ο繝ｼ繝・
-          loadUnityGame();
-        });
-      }
-
-      // Unity 繧ｲ繝ｼ繝縺ｮ繝ｭ繝ｼ繝・
       function loadUnityGame() {
         const container = document.querySelector("#unity-container");
         const canvas = document.querySelector("#unity-canvas");
         const loadingBar = document.querySelector("#unity-loading-bar");
         const progressBarFull = document.querySelector("#unity-progress-bar-full");
         const warningBanner = document.querySelector("#unity-warning");
-
-        // 繝ｭ繝ｼ繝・・ｽ・ｽ繝ｳ繧ｰ陦ｨ遉ｺ
         loadingBar.style.display = "block";
-
-        // Unity WebGL險ｭ螳・
         const buildUrl = "Build";
         const loaderUrl = buildUrl + "/WebGL_Build.loader.js";
-
         const config = {
           dataUrl: buildUrl + "/WebGL_Build.data",
           frameworkUrl: buildUrl + "/WebGL_Build.framework.js",
@@ -250,27 +164,18 @@
           productVersion: "1.0",
           showBanner: unityShowBanner,
           matchWebGLToCanvasSize: false,
-          // 髻ｳ螢ｰ髢｢騾｣縺ｮ險ｭ螳・
           autoSyncPersistentDataPath: false,
-          // 繧ｨ繝ｩ繝ｼ蜃ｦ逅・・ｽE險ｭ螳・
           cacheControl: function(url) {
             return "must-revalidate";
           },
-          // Unity WebGL 縺ｮ髻ｳ螢ｰ險ｭ螳・
           audioContext: {
             resume: true,
             autoplayPolicy: 'user-gesture-required'
           }
         };
-
-        // Unity 繧ｨ繝ｳ繧ｸ繝ｳ縺ｮ蛻晄悄蛹・
         if (/iPhone|iPad|iPod|Android/i.test(navigator.userAgent)) {
-          // 繝｢繝舌う繝ｫ 繝・・ｽ・ｽ繧､繧ｹ縺ｮ蝣ｴ蜷・
           container.className = "unity-mobile";
         }
-
-        loadingBar.style.display = "block";
-
         const script = document.createElement("script");
         script.src = loaderUrl;
         script.onload = () => {
@@ -278,12 +183,8 @@
             progressBarFull.style.width = 100 * progress + "%";
           }).then((unityInstance) => {
             loadingBar.style.display = "none";
-            
-            // AudioContext 繧旦nity 繧､繝ｳ繧ｹ繧ｿ繝ｳ繧ｹ縺ｫ險ｭ螳・
             if (unityInstance.Module && unityInstance.Module.audioContext) {
               window.unityAudioContext = unityInstance.Module.audioContext;
-              
-              // AudioContext 縺・suspended 縺ｮ蝣ｴ蜷茨ｿｽE蜀埼幕
               if (window.unityAudioContext.state === 'suspended') {
                 window.unityAudioContext.resume().then(() => {
                   console.log('Unity AudioContext resumed after initialization');
@@ -292,7 +193,6 @@
                 });
               }
             }
-            
             console.log('Unity game loaded successfully');
           }).catch((message) => {
             alert(message);
@@ -300,8 +200,6 @@
         };
         document.body.appendChild(script);
       }
-
-      // 繝舌リ繝ｼ陦ｨ遉ｺ髢｢謨ｰ
       function unityShowBanner(msg, type) {
         const warningBanner = document.querySelector("#unity-warning");
         function updateBannerVisibility() {
@@ -314,56 +212,41 @@
         else if (type == 'warning') div.style = 'background: yellow; color: black; padding: 10px;';
         else div.style = 'background: blue; color: white; padding: 10px;';
         updateBannerVisibility();
-
         setTimeout(function() {
           warningBanner.removeChild(div);
           updateBannerVisibility();
         }, 5000);
       }
-
-      // 逕ｻ髱｢縺ｮ蜷代″繝√ぉ繝・・ｽ・ｽ
       function checkOrientation() {
         const rotationMessage = document.getElementById('rotation-message');
         if (window.innerHeight > window.innerWidth) {
-          // 邵ｦ逕ｻ髱｢縺ｮ蝣ｴ蜷・
           rotationMessage.style.display = 'block';
-          setTimeout(function() { rotationMessage.style.display = 'none'; }, 1000);
+          setTimeout(function() {
+            rotationMessage.style.display = 'none';
+          }, 1000);
         } else {
-          // 讓ｪ逕ｻ髱｢縺ｮ蝣ｴ蜷・
           rotationMessage.style.display = 'none';
         }
       }
-
-      // 繧､繝吶Φ繝医Μ繧ｹ繝奇ｿｽE縺ｮ險ｭ螳・
       document.addEventListener('DOMContentLoaded', function() {
-        // 繧ｹ繧ｿ繝ｼ繝茨ｿｽE繧ｿ繝ｳ縺ｮ繧ｯ繝ｪ繝・・ｽ・ｽ繧､繝吶Φ繝・
-        document.getElementById('start-button').addEventListener('click', startGame);
-
-        // 逕ｻ髱｢蝗櫁ｻ｢縺ｮ逶｣隕・
         window.addEventListener('orientationchange', function() {
           setTimeout(checkOrientation, 100);
         });
         window.addEventListener('resize', checkOrientation);
-        
-        // 蛻晄悄縺ｮ蜷代″繝√ぉ繝・・ｽ・ｽ
         checkOrientation();
-
-        // 繧ｿ繝・・ｽ・ｽ繧､繝吶Φ繝医〒繧・udioContext繧抵ｿｽE髢具ｼ郁ｿｽ蜉菫晞匱・ｽE・ｽE
         document.addEventListener('touchstart', function() {
           if (!audioContextResumed) {
             resumeAudioContext();
           }
         }, { once: true });
-
-        // 繧ｯ繝ｪ繝・・ｽ・ｽ繧､繝吶Φ繝医〒繧・udioContext繧抵ｿｽE髢具ｼ郁ｿｽ蜉菫晞匱・ｽE・ｽE
         document.addEventListener('click', function() {
           if (!audioContextResumed) {
             resumeAudioContext();
           }
         }, { once: true });
+        console.log('Loading Unity game directly...');
+        loadUnityGame();
       });
-
-      // 繧ｨ繝ｩ繝ｼ繝上Φ繝峨Μ繝ｳ繧ｰ
       window.addEventListener('error', function(e) {
         if (e.filename && (e.filename.includes('blob:') || e.filename.includes('unity'))) {
           console.warn('Unity WebGL internal error (can be ignored):', e.message);
@@ -371,7 +254,6 @@
           return false;
         }
       });
-
       window.addEventListener('unhandledrejection', function(e) {
         if (e.reason && (e.reason.toString().includes('rmdir') || e.reason.toString().includes('AudioContext'))) {
           console.warn('Unity internal error (can be ignored):', e.reason);
@@ -379,8 +261,6 @@
           return false;
         }
       });
-
-      // ServiceWorker 縺ｮ辟｡蜉ｹ蛹厄ｼ亥ｮ牙ｮ壽ｧ縺ｮ縺溘ａ・ｽE・ｽE
       if ('serviceWorker' in navigator) {
         navigator.serviceWorker.getRegistrations().then(function(registrations) {
           registrations.forEach(function(registration) {
@@ -388,8 +268,7 @@
           });
         });
       }
-
-      console.log('Audio-enabled Unity WebGL Player initialized');
+      console.log('Unity WebGL Player initialized - direct loading');
     </script>
   </body>
-</html> 
+</html>
