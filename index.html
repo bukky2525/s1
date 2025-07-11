@@ -3,12 +3,12 @@
   <head>
     <meta charset="utf-8">
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
     <title>Unity WebGL Player | s1</title>
     <link rel="shortcut icon" href="TemplateData/favicon.ico">
-    <!-- <link rel="stylesheet" href="TemplateData/style.css"> -->
     <link rel="manifest" href="manifest.webmanifest">
-        <style>
-      /* ページ全体のスタイル調整 */
+    <style>
+      /* ページ全体のスタイル設定 */
       body {
         padding: 0;
         margin: 0;
@@ -16,9 +16,41 @@
         background: #231F20;
         width: 100vw;
         height: 100vh;
+        font-family: Arial, sans-serif;
       }
 
-      /* 90度回転のスタイル - シンプルで確実な方法 */
+      /* スタートオーバーレイ */
+      #start-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.8);
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        z-index: 9999;
+        color: white;
+        text-align: center;
+      }
+
+      #start-button {
+        padding: 20px 40px;
+        font-size: 18px;
+        background: #007acc;
+        color: white;
+        border: none;
+        border-radius: 10px;
+        cursor: pointer;
+        transition: background 0.3s;
+      }
+
+      #start-button:hover {
+        background: #005a9e;
+      }
+
+      /* 90度回転のスタイル */
       #unity-container {
         position: fixed !important;
         top: 50% !important;
@@ -29,12 +61,9 @@
         transform-origin: center center !important;
         overflow: hidden !important;
         z-index: 1000 !important;
-        /* デバッグ用の境界線 */
-        border: 2px solid red !important;
-        background: blue !important;
       }
 
-      /* キャンバスのサイズ調整 */
+      /* キャンバスのサイズ設定 */
       #unity-canvas {
         width: 100% !important;
         height: 100% !important;
@@ -44,7 +73,7 @@
         padding: 0 !important;
       }
 
-      /* ローディング要素の配置 */
+      /* ローディング要素のスタイル */
       #unity-loading-bar {
         position: absolute;
         left: 50%;
@@ -53,14 +82,13 @@
         display: none;
       }
 
-      /* ロゴのスタイル */
       #unity-logo {
         width: 154px;
         height: 130px;
         background: url('TemplateData/unity-logo-dark.png') no-repeat center;
+        background-size: contain;
       }
 
-      /* プログレスバーのスタイル */
       #unity-progress-bar-empty {
         margin-left: auto;
         margin-right: auto;
@@ -68,6 +96,7 @@
         height: 18px;
         margin-top: 10px;
         background: url('TemplateData/progress-bar-empty-dark.png') no-repeat center;
+        background-size: contain;
       }
 
       #unity-progress-bar-full {
@@ -75,9 +104,9 @@
         height: 18px;
         margin-top: 10px;
         background: url('TemplateData/progress-bar-full-dark.png') no-repeat center;
+        background-size: contain;
       }
 
-      /* 警告バナーの配置 */
       #unity-warning {
         position: absolute;
         left: 50%;
@@ -86,10 +115,42 @@
         background: white;
         padding: 5px;
         color: black;
+        border-radius: 5px;
+      }
+
+      /* 縦画面でのメッセージ表示 */
+      @media (max-width: 768px) and (orientation: portrait) {
+        #rotation-message {
+          position: fixed;
+          top: 50%;
+          left: 50%;
+          transform: translate(-50%, -50%);
+          background: rgba(0, 0, 0, 0.9);
+          color: white;
+          padding: 20px;
+          border-radius: 10px;
+          text-align: center;
+          z-index: 10000;
+        }
       }
     </style>
   </head>
   <body>
+    <!-- 音声開始用のオーバーレイ -->
+    <div id="start-overlay">
+      <div>
+        <h2>ゲームを開始</h2>
+        <p>タップして音声を有効にしてゲームを開始してください</p>
+        <button id="start-button">ゲームスタート</button>
+      </div>
+    </div>
+
+    <!-- 画面回転メッセージ -->
+    <div id="rotation-message" style="display: none;">
+      <h3>画面を横向きにしてください</h3>
+      <p>最適なゲーム体験のために端末を横向きにしてください</p>
+    </div>
+
     <div id="unity-container">
       <canvas id="unity-canvas" width=1280 height=720 tabindex="-1"></canvas>
       <div id="unity-loading-bar">
@@ -100,79 +161,156 @@
       </div>
       <div id="unity-warning"> </div>
     </div>
+
     <script>
-      window.addEventListener("load", function () {
-        if ("serviceWorker" in navigator) {
-          // 完全なServiceWorkerリセット
-          navigator.serviceWorker.getRegistrations().then(function(registrations) {
-            console.log('Found', registrations.length, 'ServiceWorker registrations');
-            for(let registration of registrations) {
-              console.log('Unregistering ServiceWorker:', registration.scope);
-              registration.unregister();
+      // グローバル変数
+      var gameStarted = false;
+      var audioContextResumed = false;
+
+      // AudioContext の問題を解決する関数
+      function resumeAudioContext() {
+        if (audioContextResumed) return Promise.resolve();
+        
+        return new Promise((resolve) => {
+          // AudioContext の再開を試行
+          const tryResumeAudio = () => {
+            try {
+              // Web Audio API が利用可能かチェック
+              if (window.AudioContext || window.webkitAudioContext) {
+                const AudioContext = window.AudioContext || window.webkitAudioContext;
+                if (window.unityAudioContext) {
+                  // Unity の AudioContext を再開
+                  if (window.unityAudioContext.state === 'suspended') {
+                    window.unityAudioContext.resume().then(() => {
+                      console.log('Unity AudioContext resumed successfully');
+                      audioContextResumed = true;
+                      resolve();
+                    }).catch((error) => {
+                      console.warn('Failed to resume Unity AudioContext:', error);
+                      resolve(); // エラーでも続行
+                    });
+                  } else {
+                    audioContextResumed = true;
+                    resolve();
+                  }
+                } else {
+                  // Unity の AudioContext がまだ作成されていない場合
+                  audioContextResumed = true;
+                  resolve();
+                }
+              } else {
+                console.warn('AudioContext not supported');
+                resolve();
+              }
+            } catch (error) {
+              console.warn('Audio resume error:', error);
+              resolve(); // エラーでも続行
+            }
+          };
+
+          tryResumeAudio();
+        });
+      }
+
+      // ゲーム開始処理
+      function startGame() {
+        if (gameStarted) return;
+
+        console.log('Starting game...');
+        gameStarted = true;
+
+        // オーバーレイを隠す
+        const overlay = document.getElementById('start-overlay');
+        overlay.style.display = 'none';
+
+        // AudioContext を再開
+        resumeAudioContext().then(() => {
+          console.log('Audio context ready');
+          
+          // Unity ゲームをロード
+          loadUnityGame();
+        });
+      }
+
+      // Unity ゲームのロード
+      function loadUnityGame() {
+        const container = document.querySelector("#unity-container");
+        const canvas = document.querySelector("#unity-canvas");
+        const loadingBar = document.querySelector("#unity-loading-bar");
+        const progressBarFull = document.querySelector("#unity-progress-bar-full");
+        const warningBanner = document.querySelector("#unity-warning");
+
+        // ローディング表示
+        loadingBar.style.display = "block";
+
+        // Unity WebGL設定
+        const buildUrl = "Build";
+        const loaderUrl = buildUrl + "/WebGL_Build.loader.js";
+
+        const config = {
+          dataUrl: buildUrl + "/WebGL_Build.data",
+          frameworkUrl: buildUrl + "/WebGL_Build.framework.js",
+          codeUrl: buildUrl + "/WebGL_Build.wasm",
+          streamingAssetsUrl: "StreamingAssets",
+          companyName: "DefaultCompany",
+          productName: "s1",
+          productVersion: "1.0",
+          showBanner: unityShowBanner,
+          matchWebGLToCanvasSize: false,
+          // 音声関連の設定
+          autoSyncPersistentDataPath: false,
+          // エラー処理の設定
+          cacheControl: function(url) {
+            return "must-revalidate";
+          },
+          // Unity WebGL の音声設定
+          audioContext: {
+            resume: true,
+            autoplayPolicy: 'user-gesture-required'
+          }
+        };
+
+        // Unity エンジンの初期化
+        if (/iPhone|iPad|iPod|Android/i.test(navigator.userAgent)) {
+          // モバイル デバイスの場合
+          container.className = "unity-mobile";
+        }
+
+        loadingBar.style.display = "block";
+
+        const script = document.createElement("script");
+        script.src = loaderUrl;
+        script.onload = () => {
+          createUnityInstance(canvas, config, (progress) => {
+            progressBarFull.style.width = 100 * progress + "%";
+          }).then((unityInstance) => {
+            loadingBar.style.display = "none";
+            
+            // AudioContext をUnity インスタンスに設定
+            if (unityInstance.Module && unityInstance.Module.audioContext) {
+              window.unityAudioContext = unityInstance.Module.audioContext;
+              
+              // AudioContext が suspended の場合は再開
+              if (window.unityAudioContext.state === 'suspended') {
+                window.unityAudioContext.resume().then(() => {
+                  console.log('Unity AudioContext resumed after initialization');
+                }).catch((error) => {
+                  console.warn('Failed to resume AudioContext after initialization:', error);
+                });
+              }
             }
             
-            // 全キャッシュを削除
-            return caches.keys();
-          }).then(function(cacheNames) {
-            console.log('Found', cacheNames.length, 'caches');
-            return Promise.all(
-              cacheNames.map(function(cacheName) {
-                console.log('Deleting cache:', cacheName);
-                return caches.delete(cacheName);
-              })
-            );
-          }).then(function() {
-            console.log('All caches cleared successfully');
-            // ServiceWorkerを無効化してシンプルに
-            console.log('Running without ServiceWorker for stability');
-          }).catch(function(error) {
-            console.log('Cache clearing failed:', error);
+            console.log('Unity game loaded successfully');
+          }).catch((message) => {
+            alert(message);
           });
-        }
-      });
+        };
+        document.body.appendChild(script);
+      }
 
-      var container = document.querySelector("#unity-container");
-      var canvas = document.querySelector("#unity-canvas");
-      var loadingBar = document.querySelector("#unity-loading-bar");
-      var progressBarFull = document.querySelector("#unity-progress-bar-full");
-      var warningBanner = document.querySelector("#unity-warning");
-
-      // 90度回転のデバッグ情報
-      setTimeout(function() {
-        console.log('=== 90度回転デバッグ情報 ===');
-        console.log('Container element:', container);
-        console.log('Container visible:', container.offsetWidth > 0 && container.offsetHeight > 0);
-        console.log('Container position:', container.getBoundingClientRect());
-        const style = window.getComputedStyle(container);
-        console.log('Container transform:', style.transform);
-        console.log('Container width:', style.width);
-        console.log('Container height:', style.height);
-        console.log('Container position style:', style.position);
-        console.log('Container top:', style.top);
-        console.log('Container left:', style.left);
-        console.log('Screen size:', window.screen.width, 'x', window.screen.height);
-        console.log('Window size:', window.innerWidth, 'x', window.innerHeight);
-        console.log('Device pixel ratio:', window.devicePixelRatio);
-        console.log('=== デバッグ情報終了 ===');
-        
-        // 90度回転が見えない場合の緊急対処
-        if (container.getBoundingClientRect().width === 0) {
-          console.warn('Container not visible! Applying fallback styles...');
-          container.style.setProperty('transform', 'none', 'important');
-          container.style.setProperty('width', '100vw', 'important');
-          container.style.setProperty('height', '100vh', 'important');
-          container.style.setProperty('top', '0', 'important');
-          container.style.setProperty('left', '0', 'important');
-        }
-      }, 1000);
-
-      // Shows a temporary message banner/ribbon for a few seconds, or
-      // a permanent error message on top of the canvas if type=='error'.
-      // If type=='warning', a yellow highlight color is used.
-      // Modify or remove this function to customize the visually presented
-      // way that non-critical warnings and error messages are presented to the
-      // user.
+      // バナー表示関数
       function unityShowBanner(msg, type) {
+        const warningBanner = document.querySelector("#unity-warning");
         function updateBannerVisibility() {
           warningBanner.style.display = warningBanner.children.length ? 'block' : 'none';
         }
@@ -180,113 +318,84 @@
         div.innerHTML = msg;
         warningBanner.appendChild(div);
         if (type == 'error') div.style = 'background: red; padding: 10px;';
-        else {
-          if (type == 'warning') div.style = 'background: yellow; padding: 10px;';
-          setTimeout(function() {
-            warningBanner.removeChild(div);
-            updateBannerVisibility();
-          }, 5000);
-        }
+        else if (type == 'warning') div.style = 'background: yellow; color: black; padding: 10px;';
+        else div.style = 'background: blue; color: white; padding: 10px;';
         updateBannerVisibility();
+
+        setTimeout(function() {
+          warningBanner.removeChild(div);
+          updateBannerVisibility();
+        }, 5000);
       }
 
-      var buildUrl = "Build";
-      var loaderUrl = buildUrl + "/WebGL_Build.loader.js";
-      var config = {
-        dataUrl: buildUrl + "/WebGL_Build.data",
-        frameworkUrl: buildUrl + "/WebGL_Build.framework.js",
-        codeUrl: buildUrl + "/WebGL_Build.wasm",
-        streamingAssetsUrl: "StreamingAssets",
-        companyName: "DefaultCompany",
-        productName: "s1",
-        productVersion: "1.0",
-        showBanner: unityShowBanner,
-        autoSyncPersistentDataPath: false,
-        matchWebGLToCanvasSize: false,
-        // エラー対策のための追加設定
-        memoryInitializerRequest: undefined,
-        cacheControl: function(url) {
-          return "must-revalidate";
+      // 画面の向きチェック
+      function checkOrientation() {
+        const rotationMessage = document.getElementById('rotation-message');
+        if (window.innerHeight > window.innerWidth) {
+          // 縦画面の場合
+          rotationMessage.style.display = 'block';
+        } else {
+          // 横画面の場合
+          rotationMessage.style.display = 'none';
         }
-      };
-
-      // By default Unity keeps WebGL canvas render target size matched with
-      // the DOM size of the canvas element (scaled by window.devicePixelRatio)
-      // Set this to false if you want to decouple this synchronization from
-      // happening inside the engine, and you would instead like to size up
-      // the canvas DOM size and WebGL render target sizes yourself.
-      // config.matchWebGLToCanvasSize = false;
-
-      if (/iPhone|iPad|iPod|Android/i.test(navigator.userAgent)) {
-        // Mobile device style: fill the whole browser client area with the game canvas:
-        var meta = document.createElement('meta');
-        meta.name = 'viewport';
-        meta.content = 'width=device-width, height=device-height, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, shrink-to-fit=no, viewport-fit=cover';
-        document.getElementsByTagName('head')[0].appendChild(meta);
-        
-        // モバイルでの90度回転確認
-        console.log('Mobile device detected - screen size:', window.innerWidth, 'x', window.innerHeight);
-        console.log('Viewport size:', window.screen.width, 'x', window.screen.height);
-        console.log('CSS rotation will be applied');
       }
 
-      loadingBar.style.display = "block";
+      // イベントリスナーの設定
+      document.addEventListener('DOMContentLoaded', function() {
+        // スタートボタンのクリックイベント
+        document.getElementById('start-button').addEventListener('click', startGame);
 
-      var script = document.createElement("script");
-      script.src = loaderUrl;
-      script.onload = () => {
-        console.log('Unity loader script loaded successfully');
-        // Unity WebGL エラーハンドリング強化
-        window.addEventListener('error', function(e) {
-          if (e.filename && e.filename.includes('blob:')) {
-            console.warn('Unity WebGL internal error (can be ignored):', e.message);
-            e.preventDefault(); // エラーを抑制
-            return false;
-          }
+        // 画面回転の監視
+        window.addEventListener('orientationchange', function() {
+          setTimeout(checkOrientation, 100);
         });
+        window.addEventListener('resize', checkOrientation);
         
-        window.addEventListener('unhandledrejection', function(e) {
-          if (e.reason && e.reason.toString().includes('rmdir')) {
-            console.warn('Unity filesystem error (can be ignored):', e.reason);
-            e.preventDefault(); // エラーを抑制
-            return false;
+        // 初期の向きチェック
+        checkOrientation();
+
+        // タッチイベントでもAudioContextを再開（追加保険）
+        document.addEventListener('touchstart', function() {
+          if (!audioContextResumed) {
+            resumeAudioContext();
           }
-        });
-        
-        createUnityInstance(canvas, config, (progress) => {
-          progressBarFull.style.width = 100 * progress + "%";
-          console.log('Unity loading progress:', Math.round(progress * 100) + '%');
-        }).then((unityInstance) => {
-          console.log('Unity instance created successfully');
-          
-          // 90度回転用のキャンバスサイズ設定
-          const screenWidth = window.innerWidth;
-          const screenHeight = window.innerHeight;
-          console.log('Setting canvas size for rotation:', screenHeight, 'x', screenWidth);
-          
-          // Unity WebGLのキャンバスサイズを90度回転に合わせて設定
-          try {
-            unityInstance.Module.canvas.width = screenHeight;
-            unityInstance.Module.canvas.height = screenWidth;
-          } catch (e) {
-            console.warn('Canvas resize failed, but continuing:', e);
+        }, { once: true });
+
+        // クリックイベントでもAudioContextを再開（追加保険）
+        document.addEventListener('click', function() {
+          if (!audioContextResumed) {
+            resumeAudioContext();
           }
-          
-          loadingBar.style.display = "none";
-          console.log('Unity WebGL ready - game should be playable despite any internal warnings');
-        }).catch((message) => {
-          console.error('Unity instance creation failed:', message);
-          // より詳細なエラー表示
-          warningBanner.innerHTML = '<div style="background: red; padding: 10px; color: white;">Unity読み込みエラー: ' + message + '</div>';
-          loadingBar.style.display = "none";
+        }, { once: true });
+      });
+
+      // エラーハンドリング
+      window.addEventListener('error', function(e) {
+        if (e.filename && (e.filename.includes('blob:') || e.filename.includes('unity'))) {
+          console.warn('Unity WebGL internal error (can be ignored):', e.message);
+          e.preventDefault();
+          return false;
+        }
+      });
+
+      window.addEventListener('unhandledrejection', function(e) {
+        if (e.reason && (e.reason.toString().includes('rmdir') || e.reason.toString().includes('AudioContext'))) {
+          console.warn('Unity internal error (can be ignored):', e.reason);
+          e.preventDefault();
+          return false;
+        }
+      });
+
+      // ServiceWorker の無効化（安定性のため）
+      if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.getRegistrations().then(function(registrations) {
+          registrations.forEach(function(registration) {
+            registration.unregister();
+          });
         });
-      };
-      script.onerror = () => {
-        console.error('Failed to load Unity loader script');
-        warningBanner.innerHTML = '<div style="background: red; padding: 10px; color: white;">Unity loaderの読み込みに失敗しました</div>';
-        loadingBar.style.display = "none";
-      };
-      document.body.appendChild(script);
+      }
+
+      console.log('Audio-enabled Unity WebGL Player initialized');
     </script>
   </body>
-</html>
+</html> 
