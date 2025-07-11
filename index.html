@@ -98,43 +98,30 @@
     <script>
       window.addEventListener("load", function () {
         if ("serviceWorker" in navigator) {
-          // Clear old service workers and caches first
+          // 完全なServiceWorkerリセット
           navigator.serviceWorker.getRegistrations().then(function(registrations) {
+            console.log('Found', registrations.length, 'ServiceWorker registrations');
             for(let registration of registrations) {
-              console.log('Unregistering old ServiceWorker');
+              console.log('Unregistering ServiceWorker:', registration.scope);
               registration.unregister();
             }
             
-            // Clear all caches
-            caches.keys().then(function(cacheNames) {
-              return Promise.all(
-                cacheNames.map(function(cacheName) {
-                  console.log('Deleting cache:', cacheName);
-                  return caches.delete(cacheName);
-                })
-              );
-            }).then(function() {
-              // Register new service worker
-              return navigator.serviceWorker.register("ServiceWorker.js", { updateViaCache: 'none' });
-            }).then(function(registration) {
-              console.log('New ServiceWorker registered successfully');
-              
-              // Force update check
-              registration.addEventListener('updatefound', function() {
-                console.log('ServiceWorker update found');
-                const newWorker = registration.installing;
-                newWorker.addEventListener('statechange', function() {
-                  if (newWorker.state === 'installed') {
-                    console.log('ServiceWorker installed and ready');
-                  }
-                });
-              });
-              
-              // Check for updates immediately
-              registration.update();
-            }).catch(function(error) {
-              console.log('ServiceWorker registration failed:', error);
-            });
+            // 全キャッシュを削除
+            return caches.keys();
+          }).then(function(cacheNames) {
+            console.log('Found', cacheNames.length, 'caches');
+            return Promise.all(
+              cacheNames.map(function(cacheName) {
+                console.log('Deleting cache:', cacheName);
+                return caches.delete(cacheName);
+              })
+            );
+          }).then(function() {
+            console.log('All caches cleared successfully');
+            // ServiceWorkerを無効化してシンプルに
+            console.log('Running without ServiceWorker for stability');
+          }).catch(function(error) {
+            console.log('Cache clearing failed:', error);
           });
         }
       });
@@ -187,6 +174,7 @@
         productVersion: "1.0",
         showBanner: unityShowBanner,
         autoSyncPersistentDataPath: true,
+        matchWebGLToCanvasSize: false,
       };
 
       // By default Unity keeps WebGL canvas render target size matched with
@@ -212,13 +200,24 @@
       var script = document.createElement("script");
       script.src = loaderUrl;
       script.onload = () => {
+        console.log('Unity loader script loaded successfully');
         createUnityInstance(canvas, config, (progress) => {
           progressBarFull.style.width = 100 * progress + "%";
+          console.log('Unity loading progress:', Math.round(progress * 100) + '%');
         }).then((unityInstance) => {
+          console.log('Unity instance created successfully');
           loadingBar.style.display = "none";
         }).catch((message) => {
-          alert(message);
+          console.error('Unity instance creation failed:', message);
+          // より詳細なエラー表示
+          warningBanner.innerHTML = '<div style="background: red; padding: 10px; color: white;">Unity読み込みエラー: ' + message + '</div>';
+          loadingBar.style.display = "none";
         });
+      };
+      script.onerror = () => {
+        console.error('Failed to load Unity loader script');
+        warningBanner.innerHTML = '<div style="background: red; padding: 10px; color: white;">Unity loaderの読み込みに失敗しました</div>';
+        loadingBar.style.display = "none";
       };
       document.body.appendChild(script);
     </script>
