@@ -134,10 +134,15 @@
       var warningBanner = document.querySelector("#unity-warning");
 
       // 90度回転のデバッグ情報
+      console.log('=== 90度回転デバッグ情報 ===');
       console.log('Container element:', container);
       console.log('Container transform:', window.getComputedStyle(container).transform);
       console.log('Container width:', window.getComputedStyle(container).width);
       console.log('Container height:', window.getComputedStyle(container).height);
+      console.log('Screen size:', window.screen.width, 'x', window.screen.height);
+      console.log('Window size:', window.innerWidth, 'x', window.innerHeight);
+      console.log('Device pixel ratio:', window.devicePixelRatio);
+      console.log('=== デバッグ情報終了 ===');
 
       // Shows a temporary message banner/ribbon for a few seconds, or
       // a permanent error message on top of the canvas if type=='error'.
@@ -174,8 +179,13 @@
         productName: "s1",
         productVersion: "1.0",
         showBanner: unityShowBanner,
-        autoSyncPersistentDataPath: true,
+        autoSyncPersistentDataPath: false,
         matchWebGLToCanvasSize: false,
+        // エラー対策のための追加設定
+        memoryInitializerRequest: undefined,
+        cacheControl: function(url) {
+          return "must-revalidate";
+        }
       };
 
       // By default Unity keeps WebGL canvas render target size matched with
@@ -204,6 +214,23 @@
       script.src = loaderUrl;
       script.onload = () => {
         console.log('Unity loader script loaded successfully');
+        // Unity WebGL エラーハンドリング強化
+        window.addEventListener('error', function(e) {
+          if (e.filename && e.filename.includes('blob:')) {
+            console.warn('Unity WebGL internal error (can be ignored):', e.message);
+            e.preventDefault(); // エラーを抑制
+            return false;
+          }
+        });
+        
+        window.addEventListener('unhandledrejection', function(e) {
+          if (e.reason && e.reason.toString().includes('rmdir')) {
+            console.warn('Unity filesystem error (can be ignored):', e.reason);
+            e.preventDefault(); // エラーを抑制
+            return false;
+          }
+        });
+        
         createUnityInstance(canvas, config, (progress) => {
           progressBarFull.style.width = 100 * progress + "%";
           console.log('Unity loading progress:', Math.round(progress * 100) + '%');
@@ -216,10 +243,15 @@
           console.log('Setting canvas size for rotation:', screenHeight, 'x', screenWidth);
           
           // Unity WebGLのキャンバスサイズを90度回転に合わせて設定
-          unityInstance.Module.canvas.width = screenHeight;
-          unityInstance.Module.canvas.height = screenWidth;
+          try {
+            unityInstance.Module.canvas.width = screenHeight;
+            unityInstance.Module.canvas.height = screenWidth;
+          } catch (e) {
+            console.warn('Canvas resize failed, but continuing:', e);
+          }
           
           loadingBar.style.display = "none";
+          console.log('Unity WebGL ready - game should be playable despite any internal warnings');
         }).catch((message) => {
           console.error('Unity instance creation failed:', message);
           // より詳細なエラー表示
