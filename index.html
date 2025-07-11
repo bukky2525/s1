@@ -7,6 +7,34 @@
     <link rel="shortcut icon" href="TemplateData/favicon.ico">
     <link rel="stylesheet" href="TemplateData/style.css">
     <link rel="manifest" href="manifest.webmanifest">
+    <style>
+      /* 90度回転のスタイル */
+      #unity-container {
+        transform: rotate(90deg);
+        transform-origin: center center;
+        width: 720px;
+        height: 1280px;
+        margin: auto;
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        margin-left: -360px;
+        margin-top: -640px;
+      }
+      
+      /* ページ全体のスタイル調整 */
+      body {
+        margin: 0;
+        overflow: hidden;
+        background: #000;
+      }
+      
+      /* キャンバスのサイズ調整 */
+      #unity-canvas {
+        width: 1280px !important;
+        height: 720px !important;
+      }
+    </style>
   </head>
   <body>
     <div id="unity-container">
@@ -82,6 +110,10 @@
         meta.name = 'viewport';
         meta.content = 'width=device-width, height=device-height, initial-scale=1.0, user-scalable=no, shrink-to-fit=yes';
         document.getElementsByTagName('head')[0].appendChild(meta);
+        
+        // モバイル用の回転スタイル調整
+        container.style.transform = 'rotate(90deg) scale(0.8)';
+        container.style.transformOrigin = 'center center';
       }
 
       loadingBar.style.display = "block";
