@@ -20,23 +20,24 @@
 
       /* 90度回転のスタイル - 最優先 */
       #unity-container {
-        transform: rotate(90deg) !important;
-        transform-origin: center center !important;
-        width: 100vh !important;
-        height: 100vw !important;
-        position: absolute !important;
-        top: 50% !important;
-        left: 50% !important;
-        margin-left: -50vw !important;
-        margin-top: -50vh !important;
+        position: fixed !important;
+        top: 0 !important;
+        left: 0 !important;
+        width: 100vw !important;
+        height: 100vh !important;
+        transform: rotate(90deg) translate(-100vh, 0) !important;
+        transform-origin: 0 0 !important;
+        overflow: hidden !important;
       }
 
       /* キャンバスのサイズ調整 */
       #unity-canvas {
-        width: 100% !important;
-        height: 100% !important;
+        width: 100vh !important;
+        height: 100vw !important;
         background: #231F20 !important;
-        display: block;
+        display: block !important;
+        margin: 0 !important;
+        padding: 0 !important;
       }
 
       /* ローディング要素の配置 */
@@ -188,11 +189,13 @@
         // Mobile device style: fill the whole browser client area with the game canvas:
         var meta = document.createElement('meta');
         meta.name = 'viewport';
-        meta.content = 'width=device-width, height=device-height, initial-scale=1.0, user-scalable=no, shrink-to-fit=yes';
+        meta.content = 'width=device-width, height=device-height, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, shrink-to-fit=no, viewport-fit=cover';
         document.getElementsByTagName('head')[0].appendChild(meta);
         
-        // CSSの90度回転設定をそのまま使用（JavaScriptで上書きしない）
-        console.log('Mobile device detected - using CSS rotation');
+        // モバイルでの90度回転確認
+        console.log('Mobile device detected - screen size:', window.innerWidth, 'x', window.innerHeight);
+        console.log('Viewport size:', window.screen.width, 'x', window.screen.height);
+        console.log('CSS rotation will be applied');
       }
 
       loadingBar.style.display = "block";
@@ -206,6 +209,16 @@
           console.log('Unity loading progress:', Math.round(progress * 100) + '%');
         }).then((unityInstance) => {
           console.log('Unity instance created successfully');
+          
+          // 90度回転用のキャンバスサイズ設定
+          const screenWidth = window.innerWidth;
+          const screenHeight = window.innerHeight;
+          console.log('Setting canvas size for rotation:', screenHeight, 'x', screenWidth);
+          
+          // Unity WebGLのキャンバスサイズを90度回転に合わせて設定
+          unityInstance.Module.canvas.width = screenHeight;
+          unityInstance.Module.canvas.height = screenWidth;
+          
           loadingBar.style.display = "none";
         }).catch((message) => {
           console.error('Unity instance creation failed:', message);
