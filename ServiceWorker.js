@@ -1,4 +1,4 @@
-const cacheName = "DefaultCompany-s1-1.0";
+const cacheName = "DefaultCompany-s1-1.1";
 const contentToCache = [
     "Build/WebGL_Build.loader.js",
     "Build/WebGL_Build.framework.js",
@@ -18,10 +18,24 @@ self.addEventListener('install', function (e) {
 });
 
 self.addEventListener('fetch', function (e) {
-    // Chrome拡張機能やサポートされていないスキームのリクエストをフィルタリング
-    if (e.request.url.startsWith('chrome-extension:') || 
+    // Chrome拡張やサポートされていないスキームのリクエストをフィルタリング
+    if (e.request.url.startsWith('chrome-extension:') ||
         e.request.url.startsWith('moz-extension:') ||
         e.request.url.startsWith('webkit-extension:')) {
+        return;
+    }
+
+    // POSTリクエストやその他のキャッシュできないリクエストを早期にスキップ
+    if (e.request.method !== 'GET') {
+        console.log(`[Service Worker] Skipping non-GET request: ${e.request.method} ${e.request.url}`);
+        e.respondWith(fetch(e.request));
+        return;
+    }
+
+    // blobやdataスキームのリクエストもスキップ
+    if (e.request.url.startsWith('blob:') || e.request.url.startsWith('data:')) {
+        console.log(`[Service Worker] Skipping blob/data request: ${e.request.url}`);
+        e.respondWith(fetch(e.request));
         return;
     }
 
@@ -29,16 +43,35 @@ self.addEventListener('fetch', function (e) {
       try {
         let response = await caches.match(e.request);
         console.log(`[Service Worker] Fetching resource: ${e.request.url}`);
-        if (response) { return response; }
+        if (response) { 
+            console.log(`[Service Worker] Cache hit: ${e.request.url}`);
+            return response; 
+        }
 
         response = await fetch(e.request);
-        const cache = await caches.open(cacheName);
-        console.log(`[Service Worker] Caching new resource: ${e.request.url}`);
-        cache.put(e.request, response.clone());
+        
+        // レスポンスが正常で、GETリクエストで、キャッシュ可能な場合のみキャッシュ
+        if (response && response.status === 200 && e.request.method === 'GET' && response.type === 'basic') {
+            try {
+                const cache = await caches.open(cacheName);
+                console.log(`[Service Worker] Caching new resource: ${e.request.url}`);
+                // クローンを作成してからキャッシュ
+                await cache.put(e.request, response.clone());
+            } catch (cacheError) {
+                console.log(`[Service Worker] Failed to cache: ${e.request.url}`, cacheError);
+            }
+        }
+        
         return response;
       } catch (error) {
         console.log(`[Service Worker] Fetch failed: ${error}`);
-        return fetch(e.request);
+        // フォールバック：ネットワークから直接取得を試行
+        try {
+            return await fetch(e.request);
+        } catch (fallbackError) {
+            console.log(`[Service Worker] Fallback fetch failed: ${fallbackError}`);
+            throw fallbackError;
+        }
       }
     })());
 });
