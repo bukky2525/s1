@@ -31,6 +31,9 @@ public class Battle : MonoBehaviourPunCallbacks
 
     private Dictionary<string, int> attributePointCounters = new Dictionary<string, int>();
     private Dictionary<string, GameObject> attributePointPrefabs = new Dictionary<string, GameObject>();
+    
+    // PointカードをCardAreaに生成するための参照
+    private RectTransform cardAreaRect;
 
     void Awake()
     {
@@ -57,6 +60,7 @@ public class Battle : MonoBehaviourPunCallbacks
         handManager = FindObjectOfType<HandManager>();
         InitializeAttributePointCounters();
         InitializePointPrefabs();
+        SetupCardArea(); // CardAreaの設定を追加
     }
 
     private void InitializeAttributePointCounters()
@@ -79,6 +83,42 @@ public class Battle : MonoBehaviourPunCallbacks
             if (prefab.Value == null)
             {
                 Debug.LogError($"[Battle] {prefab.Key}のポイントプレハブが設定されていません");
+            }
+        }
+    }
+
+    // CardAreaの設定（HandManagerと同様）
+    private void SetupCardArea()
+    {
+        if (cardAreaRect == null)
+        {
+            // CardAreaオブジェクトを検索
+            GameObject cardAreaObject = GameObject.Find("CardArea");
+            if (cardAreaObject != null)
+            {
+                cardAreaRect = cardAreaObject.GetComponent<RectTransform>();
+                if (cardAreaRect != null)
+                {
+                    Debug.Log("[Battle] CardAreaを検出しました - PointカードをCardAreaに生成します");
+                }
+                else
+                {
+                    Debug.LogWarning("[Battle] CardAreaオブジェクトにRectTransformが見つかりません");
+                }
+            }
+            else
+            {
+                // CardAreaが見つからない場合はCanvasをフォールバック
+                GameObject canvasObject = GameObject.Find("Canvas");
+                if (canvasObject != null)
+                {
+                    cardAreaRect = canvasObject.GetComponent<RectTransform>();
+                    Debug.Log("[Battle] CardAreaが見つからないため、Canvasをフォールバックとして使用します");
+                }
+                else
+                {
+                    Debug.LogError("[Battle] CardAreaもCanvasも見つかりません");
+                }
             }
         }
     }
@@ -319,8 +359,19 @@ public class Battle : MonoBehaviourPunCallbacks
         {
             Debug.Log($"[Battle] プレファブを生成: {attribute} Point");
             GameObject newCard = Instantiate(attributePointPrefabs[attribute], position, Quaternion.identity);
-            newCard.transform.SetParent(transform);
-            Debug.Log($"[Battle] {attribute} Pointを生成しました。位置: {position}");
+            
+            // CardAreaを親として設定（HandManagerと同様）
+            if (cardAreaRect != null)
+            {
+                newCard.transform.SetParent(cardAreaRect);
+                Debug.Log($"[Battle] {attribute} PointをCardAreaに生成しました。位置: {position}");
+            }
+            else
+            {
+                // フォールバック：Battleオブジェクトを親にする
+                newCard.transform.SetParent(transform);
+                Debug.LogWarning($"[Battle] CardAreaが設定されていないため、Battleオブジェクトを親にしました");
+            }
         }
         else
         {

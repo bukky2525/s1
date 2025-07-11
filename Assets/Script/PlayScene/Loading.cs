@@ -14,6 +14,35 @@ public class Loading : MonoBehaviour
 
     // 追加：Tweenを管理する配列
     private Sequence[] sequences = new Sequence[CIRCLE_COUNT];
+    private GameObject[] circles; // 丸オブジェクトの参照を保持
+
+    // オブジェクト破棄時にDOTweenアニメーションをキル
+    void OnDestroy()
+    {
+        // 全てのSequenceを確実にKill
+        if (sequences != null)
+        {
+            foreach (var seq in sequences)
+            {
+                if (seq != null && seq.IsActive())
+                {
+                    seq.Kill();
+                }
+            }
+        }
+
+        // 各円オブジェクトのTransformのTweenもKill
+        if (circles != null)
+        {
+            foreach (var circle in circles)
+            {
+                if (circle != null && circle.transform != null)
+                {
+                    circle.transform.DOKill();
+                }
+            }
+        }
+    }
 
     // Start is called before the first frame update
     void Start()
@@ -29,7 +58,7 @@ public class Loading : MonoBehaviour
             Debug.LogWarning("[Loading] loadingTextがInspectorでセットされていません");
         }
 
-        GameObject[] circles = new GameObject[CIRCLE_COUNT]; // 丸オブジェクトを格納する配列
+        circles = new GameObject[CIRCLE_COUNT]; // 丸オブジェクトを格納する配列
         for (int i = 0; i < CIRCLE_COUNT; i++)
         {
             circles[i] = Instantiate(circlePrefab, this.transform);
@@ -60,6 +89,18 @@ public class Loading : MonoBehaviour
         foreach (var seq in sequences)
         {
             if (seq != null && seq.IsActive()) seq.Kill();
+        }
+
+        // 各円オブジェクトのTransformのTweenもKill
+        if (circles != null)
+        {
+            foreach (var circle in circles)
+            {
+                if (circle != null && circle.transform != null)
+                {
+                    circle.transform.DOKill();
+                }
+            }
         }
 
         // 2. 接続中テキストを非表示
@@ -111,6 +152,18 @@ public class Loading : MonoBehaviour
         foreach (var seq in sequences)
         {
             if (seq != null && seq.IsActive()) seq.Kill();
+        }
+
+        // 各円オブジェクトのTransformのTweenもKill
+        if (circles != null)
+        {
+            foreach (var circle in circles)
+            {
+                if (circle != null && circle.transform != null)
+                {
+                    circle.transform.DOKill();
+                }
+            }
         }
 
         // 2. 接続中テキストを非表示

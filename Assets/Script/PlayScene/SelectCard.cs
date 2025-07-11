@@ -54,11 +54,34 @@ public class SelectCard : MonoBehaviour, IPointerDownHandler, IPointerUpHandler,
         }
     }
 
+    // オブジェクト破棄時にDOTweenアニメーションをキル
+    void OnDestroy()
+    {
+        // このオブジェクトに関連するすべてのTweenをキル
+        if (rectTransform != null)
+        {
+            rectTransform.DOKill();
+        }
+        if (image != null)
+        {
+            image.DOKill();
+        }
+        // より確実にこのGameObjectに関連するTweenをキル
+        transform.DOKill();
+    }
+
     // マウスボタン/タッチが押されたときに呼ばれる
     public void OnPointerDown(PointerEventData eventData)
     {
+        // 既存のアニメーションを一旦停止
+        if (rectTransform != null) rectTransform.DOKill();
+        if (image != null) image.DOKill();
+        
         // 軽い視覚フィードバック
-        rectTransform.DOScale(initialScale * touchScaleMultiplier, animationDuration);
+        if (rectTransform != null)
+        {
+            rectTransform.DOScale(initialScale * touchScaleMultiplier, animationDuration);
+        }
         if (image != null)
         {
             image.DOColor(pressedColor, animationDuration);
@@ -87,7 +110,10 @@ public class SelectCard : MonoBehaviour, IPointerDownHandler, IPointerUpHandler,
             out localPoint
         );
 
-        rectTransform.anchoredPosition = localPoint; // カードの位置を更新
+        if (rectTransform != null)
+        {
+            rectTransform.anchoredPosition = localPoint; // カードの位置を更新
+        }
         
         // ドラッグ中の視覚フィードバック（距離に応じて透明度変更）
         float dragDistance = Vector2.Distance(localPoint, initialPosition);
@@ -103,18 +129,25 @@ public class SelectCard : MonoBehaviour, IPointerDownHandler, IPointerUpHandler,
     // マウスボタン/タッチが離されたときに呼ばれる
     public void OnPointerUp(PointerEventData eventData)
     {
+        // 既存のアニメーションを一旦停止
+        if (rectTransform != null) rectTransform.DOKill();
+        if (image != null) image.DOKill();
+        
         // 視覚フィードバックをリセット
         if (!isDragging)
         {
             // タップのみの場合
-            rectTransform.DOScale(initialScale, animationDuration);
+            if (rectTransform != null)
+            {
+                rectTransform.DOScale(initialScale, animationDuration);
+            }
             if (image != null)
             {
                 image.DOColor(Color.white, animationDuration);
             }
         }
         
-        if (isDragging)
+        if (isDragging && rectTransform != null)
         {
             float y = rectTransform.anchoredPosition.y; // 現在のY座標を取得
 
@@ -131,7 +164,7 @@ public class SelectCard : MonoBehaviour, IPointerDownHandler, IPointerUpHandler,
                 {
                     image.DOColor(Color.white, animationDuration);
                 }
-                Debug.Log($"[戻す] Y={y} の {image.sprite.name}");
+                Debug.Log($"[戻す] Y={y} の {(image != null && image.sprite != null ? image.sprite.name : "unknown")}");
             }
         }
 
@@ -141,17 +174,38 @@ public class SelectCard : MonoBehaviour, IPointerDownHandler, IPointerUpHandler,
     // カードを削除するメソッド
     private void TryDelete(string reason)
     {
+        // 既存のアニメーションを停止
+        if (rectTransform != null) rectTransform.DOKill();
+        if (image != null) image.DOKill();
+        
         if (image != null && image.sprite != null)
         {
             string spriteName = image.sprite.name; // スプライト名を取得
             Debug.Log($"[{reason}] 削除: {spriteName}");
-
-            // 削除アニメーション
-            rectTransform.DOScale(Vector3.zero, animationDuration * 1.5f).SetEase(Ease.InBack);
-            if (image != null)
+            
+            // 手動選択の場合のみタイマーをリセット
+            if (reason != "AutoSelect")
             {
-                image.DOFade(0f, animationDuration * 1.5f);
+                // RoomKickタイマーをリセット
+                RoomKick roomKick = FindObjectOfType<RoomKick>();
+                if (roomKick != null)
+                {
+                    roomKick.ResetTimer();
+                    Debug.Log($"[SelectCard] 手動選択によりRoomKickタイマーをリセットしました (理由: {reason})");
+                }
+                
+                // CountDownタイマーをリセット
+                CountDown countDown = FindObjectOfType<CountDown>();
+                if (countDown != null)
+                {
+                    countDown.ResetTimerFromExternalAction();
+                    Debug.Log($"[SelectCard] 手動選択によりCountDownタイマーをリセットしました (理由: {reason})");
+                }
             }
+
+            // 削除アニメーション（完了時にコールバックで確実に削除）
+            var scaleAnim = rectTransform?.DOScale(Vector3.zero, animationDuration * 1.5f).SetEase(Ease.InBack);
+            var fadeAnim = image?.DOFade(0f, animationDuration * 1.5f);
 
             // 削除を通知
             if (cardSender != null)
@@ -163,8 +217,21 @@ public class SelectCard : MonoBehaviour, IPointerDownHandler, IPointerUpHandler,
                 Debug.LogWarning("[SelectCard] CardSendRPCコンポーネントが見つかりません。カードの送信ができません。");
             }
             
-            // アニメーション完了後にオブジェクトを削除
-            Destroy(gameObject, animationDuration * 1.5f);
+            // アニメーション完了後にオブジェクトを削除（nullチェック付き）
+            if (scaleAnim != null)
+            {
+                scaleAnim.OnComplete(() => {
+                    if (this != null && gameObject != null)
+                    {
+                        Destroy(gameObject);
+                    }
+                });
+            }
+            else
+            {
+                // アニメーションが作成できない場合は即座に削除
+                Destroy(gameObject);
+            }
         }
         else
         {

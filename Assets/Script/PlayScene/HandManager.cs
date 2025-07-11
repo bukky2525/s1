@@ -34,7 +34,7 @@ public class HandManager : MonoBehaviour
     public static HandManager Instance { get; private set; }
 
     public GameObject cardPrefab;          // カードのプレハブ
-    public RectTransform canvasRect;       // カードを配置するキャンバス
+    public RectTransform cardAreaRect;     // カードを配置するCardArea
     public static int selectedCardIndex = -1;
 
     [Header("カード設定")]
@@ -79,13 +79,8 @@ public class HandManager : MonoBehaviour
     {
         // Debug.Log("HandManager: PlayScene用の設定を行います");
         
-        // キャンバスの参照を更新（もし新しいシーンで別のキャンバスを使う場合）
-        Canvas canvas = FindObjectOfType<Canvas>();
-        if (canvas != null)
-        {
-            canvasRect = canvas.GetComponent<RectTransform>();
-            // Debug.Log("HandManager: 新しいキャンバスを検出しました");
-        }
+        // CardAreaの参照を更新
+        SetupCardArea();
         
         // 必要に応じて手札を再表示
         if (currentHand.Count > 0)
@@ -94,14 +89,50 @@ public class HandManager : MonoBehaviour
         }
     }
 
+    // CardAreaを検索・設定する
+    private void SetupCardArea()
+    {
+        // まずCardAreaという名前のGameObjectを検索
+        GameObject cardAreaObject = GameObject.Find("CardArea");
+        
+        if (cardAreaObject != null)
+        {
+            cardAreaRect = cardAreaObject.GetComponent<RectTransform>();
+            if (cardAreaRect != null)
+            {
+                Debug.Log("[HandManager] CardAreaを検出しました: " + cardAreaObject.name);
+            }
+            else
+            {
+                Debug.LogWarning("[HandManager] CardAreaにRectTransformがありません");
+            }
+        }
+        
+        // CardAreaが見つからない場合はCanvasをフォールバックとして使用
+        if (cardAreaRect == null)
+        {
+            Debug.LogWarning("[HandManager] CardAreaが見つかりません。Canvasを代わりに使用します");
+            Canvas canvas = FindObjectOfType<Canvas>();
+            if (canvas != null)
+            {
+                cardAreaRect = canvas.GetComponent<RectTransform>();
+                Debug.Log("[HandManager] フォールバック: Canvasを使用します");
+            }
+            else
+            {
+                Debug.LogError("[HandManager] CanvasもCardAreaも見つかりません");
+            }
+        }
+    }
+
     // 現在の手札を表示
     private void DisplayCurrentHand()
     {
         // Debug.Log($"HandManager: 現在の手札（{currentHand.Count}枚）を表示します");
         
-        if (canvasRect == null)
+        if (cardAreaRect == null)
         {
-            Debug.LogError("HandManager: canvasRectがnullです");
+            Debug.LogError("[HandManager] cardAreaRectがnullです");
             return;
         }
 
@@ -114,10 +145,10 @@ public class HandManager : MonoBehaviour
             new Vector2( 600f, -315f)  // カード5の位置
         };
 
-        // 手札のカードをインスタンス化して配置
+        // 手札のカードをインスタンス化してCardArea内に配置
         for (int i = 0; i < currentHand.Count; i++)
         {
-            GameObject card = Instantiate(cardPrefab, canvasRect); // カードのインスタンスを生成
+            GameObject card = Instantiate(cardPrefab, cardAreaRect); // CardArea内にカードのインスタンスを生成
             RectTransform rt = card.GetComponent<RectTransform>(); // RectTransformコンポーネントを取得
             rt.sizeDelta = new Vector2(cardWidth, cardHeight); // カードのサイズを設定
             rt.anchoredPosition = positions[i]; // カードの位置を設定
@@ -131,6 +162,7 @@ public class HandManager : MonoBehaviour
         LoadBackCardSprite(); // 裏面画像を読み込み
         LoadSoundEffects(); // 効果音を読み込み
         SetupAudioSource(); // AudioSourceをセットアップ
+        SetupCardArea(); // CardAreaを設定
         CreateAllCards();
         CreateHand();
     }
@@ -392,19 +424,22 @@ public class HandManager : MonoBehaviour
         }
 
         bool anyCardHidden = false;
-        // 現在表示されているカードを削除
-        foreach (Transform child in canvasRect)
+        // CardArea内のカードを削除
+        if (cardAreaRect != null)
         {
-            if (child.GetComponent<SelectCard>() != null)
+            foreach (Transform child in cardAreaRect)
             {
-                Destroy(child.gameObject);
-                anyCardHidden = true;
+                if (child.GetComponent<SelectCard>() != null)
+                {
+                    Destroy(child.gameObject);
+                    anyCardHidden = true;
+                }
             }
         }
 
         if (anyCardHidden)
         {
-            Debug.Log("[HandManager] カードを削除しました");
+            Debug.Log("[HandManager] CardArea内のカードを削除しました");
         }
         else
         {
@@ -472,9 +507,9 @@ public class HandManager : MonoBehaviour
             return;
         }
 
-        if (canvasRect == null)
+        if (cardAreaRect == null)
         {
-            Debug.LogError("[HandManager] canvasRectがnullです。カードを表示できません。");
+            Debug.LogError("[HandManager] cardAreaRectがnullです。カードを表示できません。");
             return;
         }
 
@@ -529,10 +564,10 @@ public class HandManager : MonoBehaviour
         Vector2 centerPosition = Vector2.zero;
         List<GameObject> backCards = new List<GameObject>();
 
-        // 裏面カードを中央に5枚重ねて生成
+        // 裏面カードを中央に5枚重ねてCardArea内に生成
         for (int i = 0; i < currentHand.Count; i++)
         {
-            GameObject backCard = Instantiate(cardPrefab, canvasRect);
+            GameObject backCard = Instantiate(cardPrefab, cardAreaRect);
             RectTransform rt = backCard.GetComponent<RectTransform>();
             rt.sizeDelta = new Vector2(cardWidth, cardHeight);
             rt.anchoredPosition = centerPosition;
