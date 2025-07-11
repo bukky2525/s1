@@ -8,7 +8,7 @@
     <link rel="shortcut icon" href="TemplateData/favicon.ico">
     <link rel="manifest" href="manifest.webmanifest">
     <style>
-      /* ページ全体のスタイル設定 */
+      /* ペ�Eジ全体�Eスタイル設宁E*/
       body {
         padding: 0;
         margin: 0;
@@ -19,7 +19,7 @@
         font-family: Arial, sans-serif;
       }
 
-      /* スタートオーバーレイ */
+      /* スタートオーバ�Eレイ */
       #start-overlay {
         position: fixed;
         top: 0;
@@ -63,7 +63,7 @@
         z-index: 1000 !important;
       }
 
-      /* キャンバスのサイズ設定 */
+      /* キャンバスのサイズ設宁E*/
       #unity-canvas {
         width: 100% !important;
         height: 100% !important;
@@ -73,7 +73,7 @@
         padding: 0 !important;
       }
 
-      /* ローディング要素のスタイル */
+      /* ローチE��ング要素のスタイル */
       #unity-loading-bar {
         position: absolute;
         left: 50%;
@@ -118,7 +118,7 @@
         border-radius: 5px;
       }
 
-      /* 縦画面でのメッセージ表示 */
+      /* 縦画面でのメチE��ージ表示 */
       @media (max-width: 768px) and (orientation: portrait) {
         #rotation-message {
           position: fixed;
@@ -136,19 +136,19 @@
     </style>
   </head>
   <body>
-    <!-- 音声開始用のオーバーレイ -->
+    <!-- 音声開始用のオーバ�Eレイ -->
     <div id="start-overlay">
       <div>
-        <h2>ゲームを開始</h2>
-        <p>タップして音声を有効にしてゲームを開始してください</p>
-        <button id="start-button">ゲームスタート</button>
+        <h2>ゲームを開姁E/h2>
+        <p>タチE�Eして音声を有効にしてゲームを開始してください</p>
+        <button id="start-button">ゲームスターチE/button>
       </div>
     </div>
 
-    <!-- 画面回転メッセージ -->
+    <!-- 画面回転メチE��ージ -->
     <div id="rotation-message" style="display: none;">
       <h3>画面を横向きにしてください</h3>
-      <p>最適なゲーム体験のために端末を横向きにしてください</p>
+      <p>最適なゲーム体験�Eために端末を横向きにしてください</p>
     </div>
 
     <div id="unity-container">
@@ -172,14 +172,14 @@
         if (audioContextResumed) return Promise.resolve();
         
         return new Promise((resolve) => {
-          // AudioContext の再開を試行
+          // AudioContext の再開を試衁E
           const tryResumeAudio = () => {
             try {
-              // Web Audio API が利用可能かチェック
+              // Web Audio API が利用可能かチェチE��
               if (window.AudioContext || window.webkitAudioContext) {
                 const AudioContext = window.AudioContext || window.webkitAudioContext;
                 if (window.unityAudioContext) {
-                  // Unity の AudioContext を再開
+                  // Unity の AudioContext を�E閁E
                   if (window.unityAudioContext.state === 'suspended') {
                     window.unityAudioContext.resume().then(() => {
                       console.log('Unity AudioContext resumed successfully');
@@ -187,14 +187,14 @@
                       resolve();
                     }).catch((error) => {
                       console.warn('Failed to resume Unity AudioContext:', error);
-                      resolve(); // エラーでも続行
+                      resolve(); // エラーでも続衁E
                     });
                   } else {
                     audioContextResumed = true;
                     resolve();
                   }
                 } else {
-                  // Unity の AudioContext がまだ作成されていない場合
+                  // Unity の AudioContext がまだ作�EされてぁE��ぁE��吁E
                   audioContextResumed = true;
                   resolve();
                 }
@@ -204,7 +204,7 @@
               }
             } catch (error) {
               console.warn('Audio resume error:', error);
-              resolve(); // エラーでも続行
+              resolve(); // エラーでも続衁E
             }
           };
 
@@ -212,27 +212,27 @@
         });
       }
 
-      // ゲーム開始処理
+      // ゲーム開始�E琁E
       function startGame() {
         if (gameStarted) return;
 
         console.log('Starting game...');
         gameStarted = true;
 
-        // オーバーレイを隠す
+        // オーバ�Eレイを隠ぁE
         const overlay = document.getElementById('start-overlay');
         overlay.style.display = 'none';
 
-        // AudioContext を再開
+        // AudioContext を�E閁E
         resumeAudioContext().then(() => {
           console.log('Audio context ready');
           
-          // Unity ゲームをロード
+          // Unity ゲームをローチE
           loadUnityGame();
         });
       }
 
-      // Unity ゲームのロード
+      // Unity ゲームのローチE
       function loadUnityGame() {
         const container = document.querySelector("#unity-container");
         const canvas = document.querySelector("#unity-canvas");
@@ -240,10 +240,10 @@
         const progressBarFull = document.querySelector("#unity-progress-bar-full");
         const warningBanner = document.querySelector("#unity-warning");
 
-        // ローディング表示
+        // ローチE��ング表示
         loadingBar.style.display = "block";
 
-        // Unity WebGL設定
+        // Unity WebGL設宁E
         const buildUrl = "Build";
         const loaderUrl = buildUrl + "/WebGL_Build.loader.js";
 
@@ -257,22 +257,22 @@
           productVersion: "1.0",
           showBanner: unityShowBanner,
           matchWebGLToCanvasSize: false,
-          // 音声関連の設定
+          // 音声関連の設宁E
           autoSyncPersistentDataPath: false,
-          // エラー処理の設定
+          // エラー処琁E�E設宁E
           cacheControl: function(url) {
             return "must-revalidate";
           },
-          // Unity WebGL の音声設定
+          // Unity WebGL の音声設宁E
           audioContext: {
             resume: true,
             autoplayPolicy: 'user-gesture-required'
           }
         };
 
-        // Unity エンジンの初期化
+        // Unity エンジンの初期匁E
         if (/iPhone|iPad|iPod|Android/i.test(navigator.userAgent)) {
-          // モバイル デバイスの場合
+          // モバイル チE��イスの場吁E
           container.className = "unity-mobile";
         }
 
@@ -286,11 +286,11 @@
           }).then((unityInstance) => {
             loadingBar.style.display = "none";
             
-            // AudioContext をUnity インスタンスに設定
+            // AudioContext をUnity インスタンスに設宁E
             if (unityInstance.Module && unityInstance.Module.audioContext) {
               window.unityAudioContext = unityInstance.Module.audioContext;
               
-              // AudioContext が suspended の場合は再開
+              // AudioContext ぁEsuspended の場合�E再開
               if (window.unityAudioContext.state === 'suspended') {
                 window.unityAudioContext.resume().then(() => {
                   console.log('Unity AudioContext resumed after initialization');
@@ -328,40 +328,41 @@
         }, 5000);
       }
 
-      // 画面の向きチェック
+      // 画面の向きチェチE��
       function checkOrientation() {
         const rotationMessage = document.getElementById('rotation-message');
         if (window.innerHeight > window.innerWidth) {
-          // 縦画面の場合
+          // 縦画面の場吁E
           rotationMessage.style.display = 'block';
+          setTimeout(function() { rotationMessage.style.display = 'none'; }, 1000);
         } else {
-          // 横画面の場合
+          // 横画面の場吁E
           rotationMessage.style.display = 'none';
         }
       }
 
-      // イベントリスナーの設定
+      // イベントリスナ�Eの設宁E
       document.addEventListener('DOMContentLoaded', function() {
-        // スタートボタンのクリックイベント
+        // スタート�EタンのクリチE��イベンチE
         document.getElementById('start-button').addEventListener('click', startGame);
 
-        // 画面回転の監視
+        // 画面回転の監要E
         window.addEventListener('orientationchange', function() {
           setTimeout(checkOrientation, 100);
         });
         window.addEventListener('resize', checkOrientation);
         
-        // 初期の向きチェック
+        // 初期の向きチェチE��
         checkOrientation();
 
-        // タッチイベントでもAudioContextを再開（追加保険）
+        // タチE��イベントでめEudioContextを�E開（追加保険�E�E
         document.addEventListener('touchstart', function() {
           if (!audioContextResumed) {
             resumeAudioContext();
           }
         }, { once: true });
 
-        // クリックイベントでもAudioContextを再開（追加保険）
+        // クリチE��イベントでめEudioContextを�E開（追加保険�E�E
         document.addEventListener('click', function() {
           if (!audioContextResumed) {
             resumeAudioContext();
@@ -386,7 +387,7 @@
         }
       });
 
-      // ServiceWorker の無効化（安定性のため）
+      // ServiceWorker の無効化（安定性のため�E�E
       if ('serviceWorker' in navigator) {
         navigator.serviceWorker.getRegistrations().then(function(registrations) {
           registrations.forEach(function(registration) {
