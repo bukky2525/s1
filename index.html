@@ -73,7 +73,7 @@
         padding: 0 !important;
       }
 
-      /* ローチE��ング要素のスタイル */
+      /* ローチE�E��E�ング要素のスタイル */
       #unity-loading-bar {
         position: absolute;
         left: 50%;
@@ -118,7 +118,7 @@
         border-radius: 5px;
       }
 
-      /* 縦画面でのメチE��ージ表示 */
+      /* 縦画面でのメチE�E��E�ージ表示 */
       @media (max-width: 768px) and (orientation: portrait) {
         #rotation-message {
           position: fixed;
@@ -137,15 +137,8 @@
   </head>
   <body>
     <!-- 音声開始用のオーバ�Eレイ -->
-    <div id="start-overlay">
-      <div>
-        <h2>ゲームを開姁E/h2>
-        <p>タチE�Eして音声を有効にしてゲームを開始してください</p>
-        <button id="start-button">ゲームスターチE/button>
-      </div>
-    </div>
 
-    <!-- 画面回転メチE��ージ -->
+    <!-- 画面回転メチE�E��E�ージ -->
     <div id="rotation-message" style="display: none;">
       <h3>画面を横向きにしてください</h3>
       <p>最適なゲーム体験ために端末を横向きにしてください</p>
@@ -175,7 +168,7 @@
           // AudioContext の再開を試衁E
           const tryResumeAudio = () => {
             try {
-              // Web Audio API が利用可能かチェチE��
+              // Web Audio API が利用可能かチェチE�E��E�
               if (window.AudioContext || window.webkitAudioContext) {
                 const AudioContext = window.AudioContext || window.webkitAudioContext;
                 if (window.unityAudioContext) {
@@ -194,7 +187,7 @@
                     resolve();
                   }
                 } else {
-                  // Unity の AudioContext がまだ作�EされてぁE��ぁE��吁E
+                  // Unity の AudioContext がまだ作�EされてぁE�E��E�ぁE�E��E�吁E
                   audioContextResumed = true;
                   resolve();
                 }
@@ -240,7 +233,7 @@
         const progressBarFull = document.querySelector("#unity-progress-bar-full");
         const warningBanner = document.querySelector("#unity-warning");
 
-        // ローチE��ング表示
+        // ローチE�E��E�ング表示
         loadingBar.style.display = "block";
 
         // Unity WebGL設宁E
@@ -259,7 +252,7 @@
           matchWebGLToCanvasSize: false,
           // 音声関連の設宁E
           autoSyncPersistentDataPath: false,
-          // エラー処琁E�E設宁E
+          // エラー処琁E�E�E設宁E
           cacheControl: function(url) {
             return "must-revalidate";
           },
@@ -272,7 +265,7 @@
 
         // Unity エンジンの初期匁E
         if (/iPhone|iPad|iPod|Android/i.test(navigator.userAgent)) {
-          // モバイル チE��イスの場吁E
+          // モバイル チE�E��E�イスの場吁E
           container.className = "unity-mobile";
         }
 
@@ -328,7 +321,7 @@
         }, 5000);
       }
 
-      // 画面の向きチェチE��
+      // 画面の向きチェチE�E��E�
       function checkOrientation() {
         const rotationMessage = document.getElementById('rotation-message');
         if (window.innerHeight > window.innerWidth) {
@@ -343,7 +336,7 @@
 
       // イベントリスナ�Eの設宁E
       document.addEventListener('DOMContentLoaded', function() {
-        // スタート�EタンのクリチE��イベンチE
+        // スタート�EタンのクリチE�E��E�イベンチE
         document.getElementById('start-button').addEventListener('click', startGame);
 
         // 画面回転の監要E
@@ -352,17 +345,17 @@
         });
         window.addEventListener('resize', checkOrientation);
         
-        // 初期の向きチェチE��
+        // 初期の向きチェチE�E��E�
         checkOrientation();
 
-        // タチE��イベントでめEudioContextを�E開（追加保険�E�E
+        // タチE�E��E�イベントでめEudioContextを�E開（追加保険�E�E�E�E
         document.addEventListener('touchstart', function() {
           if (!audioContextResumed) {
             resumeAudioContext();
           }
         }, { once: true });
 
-        // クリチE��イベントでめEudioContextを�E開（追加保険�E�E
+        // クリチE�E��E�イベントでめEudioContextを�E開（追加保険�E�E�E�E
         document.addEventListener('click', function() {
           if (!audioContextResumed) {
             resumeAudioContext();
@@ -387,7 +380,7 @@
         }
       });
 
-      // ServiceWorker の無効化（安定性のため�E�E
+      // ServiceWorker の無効化（安定性のため�E�E�E�E
       if ('serviceWorker' in navigator) {
         navigator.serviceWorker.getRegistrations().then(function(registrations) {
           registrations.forEach(function(registration) {
