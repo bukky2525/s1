@@ -7,32 +7,52 @@
     <link rel="shortcut icon" href="TemplateData/favicon.ico">
     <link rel="stylesheet" href="TemplateData/style.css">
     <link rel="manifest" href="manifest.webmanifest">
-    <style>
-      /* 90度回転のスタイル */
-      #unity-container {
-        transform: rotate(90deg);
-        transform-origin: center center;
-        width: 720px;
-        height: 1280px;
-        margin: auto;
-        position: absolute;
-        top: 50%;
-        left: 50%;
-        margin-left: -360px;
-        margin-top: -640px;
-      }
-      
+        <style>
       /* ページ全体のスタイル調整 */
       body {
         margin: 0;
         overflow: hidden;
         background: #000;
+        width: 100vw;
+        height: 100vh;
       }
-      
+
+      /* 90度回転のスタイル */
+      #unity-container {
+        transform: rotate(90deg);
+        transform-origin: center center;
+        width: 100vh;
+        height: 100vw;
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        margin-left: -50vw;
+        margin-top: -50vh;
+      }
+
       /* キャンバスのサイズ調整 */
       #unity-canvas {
-        width: 1280px !important;
-        height: 720px !important;
+        width: 100% !important;
+        height: 100% !important;
+        display: block;
+      }
+
+      /* ローディング要素の配置 */
+      #unity-loading-bar {
+        position: absolute;
+        left: 50%;
+        top: 50%;
+        transform: translate(-50%, -50%);
+        display: none;
+      }
+
+      /* 警告バナーの配置 */
+      #unity-warning {
+        position: absolute;
+        left: 50%;
+        top: 5%;
+        transform: translateX(-50%);
+        color: white;
       }
     </style>
   </head>
@@ -132,6 +152,7 @@
         productName: "s1",
         productVersion: "1.0",
         showBanner: unityShowBanner,
+        autoSyncPersistentDataPath: true,
       };
 
       // By default Unity keeps WebGL canvas render target size matched with
@@ -148,9 +169,8 @@
         meta.content = 'width=device-width, height=device-height, initial-scale=1.0, user-scalable=no, shrink-to-fit=yes';
         document.getElementsByTagName('head')[0].appendChild(meta);
         
-        // モバイル用の回転スタイル調整
-        container.style.transform = 'rotate(90deg) scale(0.8)';
-        container.style.transformOrigin = 'center center';
+        // CSSの90度回転設定をそのまま使用（JavaScriptで上書きしない）
+        console.log('Mobile device detected - using CSS rotation');
       }
 
       loadingBar.style.display = "block";
