@@ -5,35 +5,37 @@
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
     <title>Unity WebGL Player | s1</title>
     <link rel="shortcut icon" href="TemplateData/favicon.ico">
-    <link rel="stylesheet" href="TemplateData/style.css">
+    <!-- <link rel="stylesheet" href="TemplateData/style.css"> -->
     <link rel="manifest" href="manifest.webmanifest">
         <style>
       /* ページ全体のスタイル調整 */
       body {
+        padding: 0;
         margin: 0;
         overflow: hidden;
-        background: #000;
+        background: #231F20;
         width: 100vw;
         height: 100vh;
       }
 
-      /* 90度回転のスタイル */
+      /* 90度回転のスタイル - 最優先 */
       #unity-container {
-        transform: rotate(90deg);
-        transform-origin: center center;
-        width: 100vh;
-        height: 100vw;
-        position: absolute;
-        top: 50%;
-        left: 50%;
-        margin-left: -50vw;
-        margin-top: -50vh;
+        transform: rotate(90deg) !important;
+        transform-origin: center center !important;
+        width: 100vh !important;
+        height: 100vw !important;
+        position: absolute !important;
+        top: 50% !important;
+        left: 50% !important;
+        margin-left: -50vw !important;
+        margin-top: -50vh !important;
       }
 
       /* キャンバスのサイズ調整 */
       #unity-canvas {
         width: 100% !important;
         height: 100% !important;
+        background: #231F20 !important;
         display: block;
       }
 
@@ -46,13 +48,39 @@
         display: none;
       }
 
+      /* ロゴのスタイル */
+      #unity-logo {
+        width: 154px;
+        height: 130px;
+        background: url('TemplateData/unity-logo-dark.png') no-repeat center;
+      }
+
+      /* プログレスバーのスタイル */
+      #unity-progress-bar-empty {
+        margin-left: auto;
+        margin-right: auto;
+        width: 141px;
+        height: 18px;
+        margin-top: 10px;
+        background: url('TemplateData/progress-bar-empty-dark.png') no-repeat center;
+      }
+
+      #unity-progress-bar-full {
+        width: 0%;
+        height: 18px;
+        margin-top: 10px;
+        background: url('TemplateData/progress-bar-full-dark.png') no-repeat center;
+      }
+
       /* 警告バナーの配置 */
       #unity-warning {
         position: absolute;
         left: 50%;
         top: 5%;
-        transform: translateX(-50%);
-        color: white;
+        transform: translate(-50%);
+        background: white;
+        padding: 5px;
+        color: black;
       }
     </style>
   </head>
@@ -116,6 +144,12 @@
       var loadingBar = document.querySelector("#unity-loading-bar");
       var progressBarFull = document.querySelector("#unity-progress-bar-full");
       var warningBanner = document.querySelector("#unity-warning");
+
+      // 90度回転のデバッグ情報
+      console.log('Container element:', container);
+      console.log('Container transform:', window.getComputedStyle(container).transform);
+      console.log('Container width:', window.getComputedStyle(container).width);
+      console.log('Container height:', window.getComputedStyle(container).height);
 
       // Shows a temporary message banner/ribbon for a few seconds, or
       // a permanent error message on top of the canvas if type=='error'.
