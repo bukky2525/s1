@@ -10,8 +10,9 @@ public class SettingUI : MonoBehaviourPunCallbacks
 {
     [Header("UI パネル")]
     [SerializeField] private GameObject settingsPanel;
-    [SerializeField] private GameObject helpPanel1;        // ルール用（旧HelpPanel）
-    [SerializeField] private GameObject helpPanel2;        // 勝利条件用（新規追加）
+    [SerializeField] private GameObject helpPanel1;        // ルール用（1ページ目）
+    [SerializeField] private GameObject helpPanel2;        // 勝利条件用（2ページ目）
+    [SerializeField] private GameObject helpPanel3;        // 3ページ目（新規追加）
     
     [Header("ボタン参照（オプション - 自動アタッチ用）")]
     [SerializeField] private Button settingButton;
@@ -19,8 +20,11 @@ public class SettingUI : MonoBehaviourPunCallbacks
     [SerializeField] private Button closeButton;          // SettingPanel内のCloseButton
     [SerializeField] private Button helpCloseButton;      // HelpPanel1内のCloseButton
     [SerializeField] private Button helpCloseButton2;     // HelpPanel2内のCloseButton
+    [SerializeField] private Button helpCloseButton3;     // HelpPanel3内のCloseButton
     [SerializeField] private Button nextButton;           // HelpPanel1内のNextButton
+    [SerializeField] private Button nextButton2;          // HelpPanel2内のNextButton
     [SerializeField] private Button backButton;           // HelpPanel2内のBackButton
+    [SerializeField] private Button backButton3;          // HelpPanel3内のBackButton
     [SerializeField] private Button leaveButton;
 
     [Header("パネル開閉イベント")]
@@ -30,6 +34,8 @@ public class SettingUI : MonoBehaviourPunCallbacks
     [SerializeField] private UnityEvent onHelpPanel1Closed;
     [SerializeField] private UnityEvent onHelpPanel2Opened;
     [SerializeField] private UnityEvent onHelpPanel2Closed;
+    [SerializeField] private UnityEvent onHelpPanel3Opened;
+    [SerializeField] private UnityEvent onHelpPanel3Closed;
     
     [Header("ゲーム操作イベント")]
     [SerializeField] private UnityEvent onLeaveButtonPressed;
@@ -70,6 +76,10 @@ public class SettingUI : MonoBehaviourPunCallbacks
         if (helpPanel2 != null)
         {
             helpPanel2.SetActive(false);
+        }
+        if (helpPanel3 != null)
+        {
+            helpPanel3.SetActive(false);
         }
         Debug.Log("[SettingUI] パネルを初期化しました");
     }
@@ -137,6 +147,18 @@ public class SettingUI : MonoBehaviourPunCallbacks
             Debug.Log("[SettingUI] HelpCloseButton2（ヘルプパネル2用）をアタッチしました");
         }
 
+        // HelpCloseButton3 (HelpPanel3内)
+        if (helpCloseButton3 == null)
+        {
+            helpCloseButton3 = GameObject.Find("HelpCloseButton3")?.GetComponent<Button>();
+        }
+        if (helpCloseButton3 != null)
+        {
+            helpCloseButton3.onClick.RemoveAllListeners();
+            helpCloseButton3.onClick.AddListener(CloseHelpPanel3);
+            Debug.Log("[SettingUI] HelpCloseButton3（ヘルプパネル3用）をアタッチしました");
+        }
+
         // NextButton (HelpPanel1内)
         if (nextButton == null)
         {
@@ -149,6 +171,18 @@ public class SettingUI : MonoBehaviourPunCallbacks
             Debug.Log("[SettingUI] NextButton（ヘルプパネル1→2遷移用）をアタッチしました");
         }
 
+        // NextButton2 (HelpPanel2内)
+        if (nextButton2 == null)
+        {
+            nextButton2 = GameObject.Find("NextButton2")?.GetComponent<Button>();
+        }
+        if (nextButton2 != null)
+        {
+            nextButton2.onClick.RemoveAllListeners();
+            nextButton2.onClick.AddListener(GoToHelpPanel3);
+            Debug.Log("[SettingUI] NextButton2（ヘルプパネル2→3遷移用）をアタッチしました");
+        }
+
         // BackButton (HelpPanel2内)
         if (backButton == null)
         {
@@ -159,6 +193,18 @@ public class SettingUI : MonoBehaviourPunCallbacks
             backButton.onClick.RemoveAllListeners();
             backButton.onClick.AddListener(BackToHelpPanel1);
             Debug.Log("[SettingUI] BackButton（ヘルプパネル2→1遷移用）をアタッチしました");
+        }
+
+        // BackButton3 (HelpPanel3内)
+        if (backButton3 == null)
+        {
+            backButton3 = GameObject.Find("BackButton3")?.GetComponent<Button>();
+        }
+        if (backButton3 != null)
+        {
+            backButton3.onClick.RemoveAllListeners();
+            backButton3.onClick.AddListener(BackToHelpPanel2);
+            Debug.Log("[SettingUI] BackButton3（ヘルプパネル3→2遷移用）をアタッチしました");
         }
 
         // LeaveButton
@@ -296,6 +342,7 @@ public class SettingUI : MonoBehaviourPunCallbacks
         {
             // 他のヘルプパネルを閉じる
             CloseHelpPanel2();
+            CloseHelpPanel3();
             
             // ヘルプパネル1を表示
             helpPanel1.SetActive(true);
@@ -365,6 +412,7 @@ public class SettingUI : MonoBehaviourPunCallbacks
         {
             // 他のヘルプパネルを閉じる
             CloseHelpPanel1();
+            CloseHelpPanel3();
             
             // ヘルプパネル2を表示
             helpPanel2.SetActive(true);
@@ -417,6 +465,67 @@ public class SettingUI : MonoBehaviourPunCallbacks
     }
 
     /// <summary>
+    /// ヘルプパネル3を開く（NextButton2のOnClickにアタッチ）
+    /// </summary>
+    public void OpenHelpPanel3()
+    {
+        if (helpPanel3 != null)
+        {
+            // 他のヘルプパネルを閉じる
+            CloseHelpPanel1();
+            CloseHelpPanel2();
+            
+            // ヘルプパネル3を表示
+            helpPanel3.SetActive(true);
+            
+            Debug.Log("[SettingUI] ヘルプパネル3を開きました");
+            
+            // ボタン操作でタイマーリセット
+            ResetCountDownTimer();
+            
+            // イベント通知
+            onHelpPanel3Opened?.Invoke();
+        }
+        else
+        {
+            Debug.LogWarning("[SettingUI] helpPanel3が設定されていません");
+        }
+    }
+
+    /// <summary>
+    /// ヘルプパネル3を閉じる（HelpPanel3内のCloseButtonのOnClickにアタッチ）
+    /// </summary>
+    public void CloseHelpPanel3()
+    {
+        if (helpPanel3 != null)
+        {
+            // ヘルプパネル3を非表示
+            helpPanel3.SetActive(false);
+            
+            // 設定パネルを再表示（ヘルプから戻る）
+            if (settingsPanel != null)
+            {
+                settingsPanel.SetActive(true);
+                Debug.Log("[SettingUI] ヘルプパネル3を閉じ、設定パネルに戻りました");
+            }
+            else
+            {
+                Debug.Log("[SettingUI] ヘルプパネル3を閉じました");
+            }
+            
+            // ボタン操作でタイマーリセット
+            ResetCountDownTimer();
+            
+            // イベント通知
+            onHelpPanel3Closed?.Invoke();
+        }
+        else
+        {
+            Debug.LogWarning("[SettingUI] helpPanel3が設定されていません");
+        }
+    }
+
+    /// <summary>
     /// ヘルプパネル1からヘルプパネル2に遷移する（NextButtonのOnClickにアタッチ）
     /// </summary>
     public void GoToHelpPanel2()
@@ -445,6 +554,34 @@ public class SettingUI : MonoBehaviourPunCallbacks
     }
 
     /// <summary>
+    /// ヘルプパネル2からヘルプパネル3に遷移する（NextButton2のOnClickにアタッチ）
+    /// </summary>
+    public void GoToHelpPanel3()
+    {
+        if (helpPanel2 != null && helpPanel3 != null)
+        {
+            // ヘルプパネル2を非表示
+            helpPanel2.SetActive(false);
+            
+            // ヘルプパネル3を表示
+            helpPanel3.SetActive(true);
+            
+            Debug.Log("[SettingUI] ヘルプパネル2からヘルプパネル3に遷移しました");
+            
+            // ボタン操作でタイマーリセット
+            ResetCountDownTimer();
+            
+            // イベント通知
+            onHelpPanel2Closed?.Invoke();
+            onHelpPanel3Opened?.Invoke();
+        }
+        else
+        {
+            Debug.LogWarning("[SettingUI] helpPanel2またはhelpPanel3が設定されていません");
+        }
+    }
+
+    /// <summary>
     /// ヘルプパネル2からヘルプパネル1に戻る（BackButtonのOnClickにアタッチ）
     /// </summary>
     public void BackToHelpPanel1()
@@ -469,6 +606,34 @@ public class SettingUI : MonoBehaviourPunCallbacks
         else
         {
             Debug.LogWarning("[SettingUI] helpPanel1またはhelpPanel2が設定されていません");
+        }
+    }
+
+    /// <summary>
+    /// ヘルプパネル3からヘルプパネル2に戻る（BackButton3のOnClickにアタッチ）
+    /// </summary>
+    public void BackToHelpPanel2()
+    {
+        if (helpPanel2 != null && helpPanel3 != null)
+        {
+            // ヘルプパネル3を非表示
+            helpPanel3.SetActive(false);
+            
+            // ヘルプパネル2を表示
+            helpPanel2.SetActive(true);
+            
+            Debug.Log("[SettingUI] ヘルプパネル3からヘルプパネル2に戻りました");
+            
+            // ボタン操作でタイマーリセット
+            ResetCountDownTimer();
+            
+            // イベント通知
+            onHelpPanel3Closed?.Invoke();
+            onHelpPanel2Opened?.Invoke();
+        }
+        else
+        {
+            Debug.LogWarning("[SettingUI] helpPanel2またはhelpPanel3が設定されていません");
         }
     }
 
@@ -551,6 +716,10 @@ public class SettingUI : MonoBehaviourPunCallbacks
         {
             helpPanel2.SetActive(false);
         }
+        if (helpPanel3 != null)
+        {
+            helpPanel3.SetActive(false);
+        }
         Debug.Log("[SettingUI] すべてのヘルプパネルを閉じました");
     }
 
@@ -581,11 +750,19 @@ public class SettingUI : MonoBehaviourPunCallbacks
     }
 
     /// <summary>
+    /// ヘルプパネル3が開いているかどうかを取得
+    /// </summary>
+    public bool IsHelpPanel3Open()
+    {
+        return helpPanel3 != null && helpPanel3.activeSelf;
+    }
+
+    /// <summary>
     /// いずれかのヘルプパネルが開いているかどうかを取得
     /// </summary>
     public bool IsAnyHelpPanelOpen()
     {
-        return IsHelpPanel1Open() || IsHelpPanel2Open();
+        return IsHelpPanel1Open() || IsHelpPanel2Open() || IsHelpPanel3Open();
     }
 
     /// <summary>
@@ -649,13 +826,25 @@ public class SettingUI : MonoBehaviourPunCallbacks
         {
             helpCloseButton2.onClick.RemoveListener(CloseHelpPanel2);
         }
+        if (helpCloseButton3 != null)
+        {
+            helpCloseButton3.onClick.RemoveListener(CloseHelpPanel3);
+        }
         if (nextButton != null)
         {
             nextButton.onClick.RemoveListener(GoToHelpPanel2);
         }
+        if (nextButton2 != null)
+        {
+            nextButton2.onClick.RemoveListener(GoToHelpPanel3);
+        }
         if (backButton != null)
         {
             backButton.onClick.RemoveListener(BackToHelpPanel1);
+        }
+        if (backButton3 != null)
+        {
+            backButton3.onClick.RemoveListener(BackToHelpPanel2);
         }
         if (leaveButton != null)
         {
