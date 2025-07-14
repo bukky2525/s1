@@ -1,101 +1,16 @@
-﻿<!DOCTYPE html>
-<html lang="ja">
+<!DOCTYPE html>
+<html lang="en-us">
   <head>
     <meta charset="utf-8">
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
     <title>Unity WebGL Player | s1</title>
     <link rel="shortcut icon" href="TemplateData/favicon.ico">
+    <link rel="stylesheet" href="TemplateData/style.css">
     <link rel="manifest" href="manifest.webmanifest">
-    <style>
-      body {
-        padding: 0;
-        margin: 0;
-        overflow: hidden;
-        background: #231F20;
-        width: 100vw;
-        height: 100vh;
-        font-family: Arial, sans-serif;
-      }
-      #unity-container {
-        position: fixed !important;
-        top: 0 !important;
-        left: 0 !important;
-        width: 100vw !important;
-        height: 100vh !important;
-        overflow: hidden !important;
-        z-index: 1000 !important;
-      }
-      #unity-canvas {
-        width: 100% !important;
-        height: 100% !important;
-        background: #231F20 !important;
-        display: block !important;
-        margin: 0 !important;
-        padding: 0 !important;
-      }
-      #unity-loading-bar {
-        position: absolute;
-        left: 50%;
-        top: 50%;
-        transform: translate(-50%, -50%);
-        display: none;
-      }
-      #unity-logo {
-        width: 154px;
-        height: 130px;
-        background: url('TemplateData/unity-logo-dark.png') no-repeat center;
-        background-size: contain;
-      }
-      #unity-progress-bar-empty {
-        margin-left: auto;
-        margin-right: auto;
-        width: 141px;
-        height: 18px;
-        margin-top: 10px;
-        background: url('TemplateData/progress-bar-empty-dark.png') no-repeat center;
-        background-size: contain;
-      }
-      #unity-progress-bar-full {
-        width: 0%;
-        height: 18px;
-        margin-top: 10px;
-        background: url('TemplateData/progress-bar-full-dark.png') no-repeat center;
-        background-size: contain;
-      }
-      #unity-warning {
-        position: absolute;
-        left: 50%;
-        top: 5%;
-        transform: translate(-50%);
-        background: white;
-        padding: 5px;
-        color: black;
-        border-radius: 5px;
-      }
-      @media (max-width: 768px) and (orientation: portrait) {
-        #rotation-message {
-          position: fixed;
-          top: 50%;
-          left: 50%;
-          transform: translate(-50%, -50%);
-          background: rgba(0, 0, 0, 0.9);
-          color: white;
-          padding: 20px;
-          border-radius: 10px;
-          text-align: center;
-          z-index: 10000;
-        }
-      }
-    </style>
   </head>
   <body>
-    <div id="rotation-message" style="display: none;">
-      <h3>画面を横向きにしてください</h3>
-      <p>最適なゲーム体験のために端末を横向きにしてください</p>
-    </div>
     <div id="unity-container">
-      <canvas id="unity-canvas" tabindex="-1"></canvas>
+      <canvas id="unity-canvas" width=1280 height=720 tabindex="-1"></canvas>
       <div id="unity-loading-bar">
         <div id="unity-logo"></div>
         <div id="unity-progress-bar-empty">
@@ -105,107 +20,25 @@
       <div id="unity-warning"> </div>
     </div>
     <script>
-      var audioContextResumed = false;
-      function resumeAudioContext() {
-        if (audioContextResumed) return Promise.resolve();
-        return new Promise((resolve) => {
-          const tryResumeAudio = () => {
-            try {
-              if (window.AudioContext || window.webkitAudioContext) {
-                const AudioContext = window.AudioContext || window.webkitAudioContext;
-                if (window.unityAudioContext) {
-                  if (window.unityAudioContext.state === 'suspended') {
-                    window.unityAudioContext.resume().then(() => {
-                      console.log('Unity AudioContext resumed successfully');
-                      audioContextResumed = true;
-                      resolve();
-                    }).catch((error) => {
-                      console.warn('Failed to resume Unity AudioContext:', error);
-                      resolve();
-                    });
-                  } else {
-                    audioContextResumed = true;
-                    resolve();
-                  }
-                } else {
-                  audioContextResumed = true;
-                  resolve();
-                }
-              } else {
-                console.warn('AudioContext not supported');
-                resolve();
-              }
-            } catch (error) {
-              console.warn('Audio resume error:', error);
-              resolve();
-            }
-          };
-          tryResumeAudio();
-        });
-      }
-      function loadUnityGame() {
-        const container = document.querySelector("#unity-container");
-        const canvas = document.querySelector("#unity-canvas");
-        const loadingBar = document.querySelector("#unity-loading-bar");
-        const progressBarFull = document.querySelector("#unity-progress-bar-full");
-        const warningBanner = document.querySelector("#unity-warning");
-        loadingBar.style.display = "block";
-        const buildUrl = "Build";
-        const loaderUrl = buildUrl + "/WebGL_Build.loader.js";
-        const config = {
-          dataUrl: buildUrl + "/WebGL_Build.data",
-          frameworkUrl: buildUrl + "/WebGL_Build.framework.js",
-          codeUrl: buildUrl + "/WebGL_Build.wasm",
-          streamingAssetsUrl: "StreamingAssets",
-          companyName: "DefaultCompany",
-          productName: "s1",
-          productVersion: "1.0",
-          showBanner: unityShowBanner,
-          matchWebGLToCanvasSize: true,
-          autoSyncPersistentDataPath: false,
-          cacheControl: function(url) {
-            return "must-revalidate";
-          },
-          audioContext: {
-            resume: true,
-            autoplayPolicy: 'user-gesture-required'
-          }
-        };
-        if (/iPhone|iPad|iPod|Android/i.test(navigator.userAgent)) {
-          container.className = "unity-mobile";
+      window.addEventListener("load", function () {
+        if ("serviceWorker" in navigator) {
+          navigator.serviceWorker.register("ServiceWorker.js");
         }
-        const script = document.createElement("script");
-        script.src = loaderUrl;
-        script.onload = () => {
-          createUnityInstance(canvas, config, (progress) => {
-            progressBarFull.style.width = 100 * progress + "%";
-          }).then((unityInstance) => {
-            loadingBar.style.display = "none";
-            window.unityInstance = unityInstance;
-            
-            if (unityInstance.Module && unityInstance.Module.audioContext) {
-              window.unityAudioContext = unityInstance.Module.audioContext;
-              if (window.unityAudioContext.state === 'suspended') {
-                window.unityAudioContext.resume().then(() => {
-                  console.log('Unity AudioContext resumed after initialization');
-                }).catch((error) => {
-                  console.warn('Failed to resume AudioContext after initialization:', error);
-                });
-              }
-            }
-            
-            // キャンバスサイズを設定
-            setupCanvasSize(canvas);
-            
-            console.log('Unity game loaded successfully with proper canvas sizing');
-          }).catch((message) => {
-            alert(message);
-          });
-        };
-        document.body.appendChild(script);
-      }
+      });
+
+      var container = document.querySelector("#unity-container");
+      var canvas = document.querySelector("#unity-canvas");
+      var loadingBar = document.querySelector("#unity-loading-bar");
+      var progressBarFull = document.querySelector("#unity-progress-bar-full");
+      var warningBanner = document.querySelector("#unity-warning");
+
+      // Shows a temporary message banner/ribbon for a few seconds, or
+      // a permanent error message on top of the canvas if type=='error'.
+      // If type=='warning', a yellow highlight color is used.
+      // Modify or remove this function to customize the visually presented
+      // way that non-critical warnings and error messages are presented to the
+      // user.
       function unityShowBanner(msg, type) {
-        const warningBanner = document.querySelector("#unity-warning");
         function updateBannerVisibility() {
           warningBanner.style.display = warningBanner.children.length ? 'block' : 'none';
         }
@@ -213,130 +46,58 @@
         div.innerHTML = msg;
         warningBanner.appendChild(div);
         if (type == 'error') div.style = 'background: red; padding: 10px;';
-        else if (type == 'warning') div.style = 'background: yellow; color: black; padding: 10px;';
-        else div.style = 'background: blue; color: white; padding: 10px;';
-        updateBannerVisibility();
-        setTimeout(function() {
-          warningBanner.removeChild(div);
-          updateBannerVisibility();
-        }, 5000);
-      }
-      function checkOrientation() {
-        const rotationMessage = document.getElementById('rotation-message');
-        if (window.innerHeight > window.innerWidth) {
-          rotationMessage.style.display = 'block';
+        else {
+          if (type == 'warning') div.style = 'background: yellow; padding: 10px;';
           setTimeout(function() {
-            rotationMessage.style.display = 'none';
-          }, 1000);
-        } else {
-          rotationMessage.style.display = 'none';
+            warningBanner.removeChild(div);
+            updateBannerVisibility();
+          }, 5000);
         }
+        updateBannerVisibility();
       }
-      function setupCanvasSize(canvas) {
-        function resizeCanvas() {
-          const container = document.querySelector("#unity-container");
-          const screenWidth = window.innerWidth;
-          const screenHeight = window.innerHeight;
-          
-          // 常に横向きゲームに対応
-          let gameWidth, gameHeight;
-          
-          if (screenWidth > screenHeight) {
-            // 横向き：通常の設定
-            gameWidth = screenWidth;
-            gameHeight = screenHeight;
-            container.style.left = '0px';
-            container.style.top = '0px';
-          } else {
-            // 縦向き：横向きゲームに対応させる
-            gameWidth = screenHeight;
-            gameHeight = screenWidth;
-            
-            // 中央に配置
-            const offsetX = (screenWidth - screenHeight) / 2;
-            const offsetY = (screenHeight - screenWidth) / 2;
-            container.style.left = offsetX + 'px';
-            container.style.top = offsetY + 'px';
-          }
-          
-          // canvasとcontainerのサイズを設定
-          canvas.width = gameWidth;
-          canvas.height = gameHeight;
-          canvas.style.width = gameWidth + 'px';
-          canvas.style.height = gameHeight + 'px';
-          container.style.width = gameWidth + 'px';
-          container.style.height = gameHeight + 'px';
-          
-          // Unity WebGLにリサイズを通知
-          if (window.unityInstance && window.unityInstance.Module) {
-            if (window.unityInstance.Module.setCanvasSize) {
-              window.unityInstance.Module.setCanvasSize(gameWidth, gameHeight);
-            }
-            // Unity WebGLのcanvasサイズを同期
-            if (window.unityInstance.Module.canvas) {
-              window.unityInstance.Module.canvas.width = gameWidth;
-              window.unityInstance.Module.canvas.height = gameHeight;
-            }
-          }
-          
-          console.log('Canvas resized to:', gameWidth, 'x', gameHeight);
-        }
-        
-        // 初期設定
-        resizeCanvas();
-        
-        // リサイズイベントに対応
-        window.addEventListener('resize', resizeCanvas);
-        window.addEventListener('orientationchange', function() {
-          setTimeout(resizeCanvas, 100);
-        });
-        
-        return resizeCanvas;
-      }
-      
 
-      
-      document.addEventListener('DOMContentLoaded', function() {
-        window.addEventListener('orientationchange', function() {
-          setTimeout(checkOrientation, 100);
-        });
-        window.addEventListener('resize', checkOrientation);
-        checkOrientation();
-        document.addEventListener('touchstart', function() {
-          if (!audioContextResumed) {
-            resumeAudioContext();
-          }
-        }, { once: true });
-        document.addEventListener('click', function() {
-          if (!audioContextResumed) {
-            resumeAudioContext();
-          }
-        }, { once: true });
-        console.log('Loading Unity game directly...');
-        loadUnityGame();
-      });
-      window.addEventListener('error', function(e) {
-        if (e.filename && (e.filename.includes('blob:') || e.filename.includes('unity'))) {
-          console.warn('Unity WebGL internal error (can be ignored):', e.message);
-          e.preventDefault();
-          return false;
-        }
-      });
-      window.addEventListener('unhandledrejection', function(e) {
-        if (e.reason && (e.reason.toString().includes('rmdir') || e.reason.toString().includes('AudioContext'))) {
-          console.warn('Unity internal error (can be ignored):', e.reason);
-          e.preventDefault();
-          return false;
-        }
-      });
-      if ('serviceWorker' in navigator) {
-        navigator.serviceWorker.getRegistrations().then(function(registrations) {
-          registrations.forEach(function(registration) {
-            registration.unregister();
-          });
-        });
+      var buildUrl = "Build";
+      var loaderUrl = buildUrl + "/WebGL_Build.loader.js";
+      var config = {
+        dataUrl: buildUrl + "/WebGL_Build.data",
+        frameworkUrl: buildUrl + "/WebGL_Build.framework.js",
+        codeUrl: buildUrl + "/WebGL_Build.wasm",
+        streamingAssetsUrl: "StreamingAssets",
+        companyName: "DefaultCompany",
+        productName: "s1",
+        productVersion: "1.0",
+        showBanner: unityShowBanner,
+      };
+
+      // By default Unity keeps WebGL canvas render target size matched with
+      // the DOM size of the canvas element (scaled by window.devicePixelRatio)
+      // Set this to false if you want to decouple this synchronization from
+      // happening inside the engine, and you would instead like to size up
+      // the canvas DOM size and WebGL render target sizes yourself.
+      // config.matchWebGLToCanvasSize = false;
+
+      if (/iPhone|iPad|iPod|Android/i.test(navigator.userAgent)) {
+        // Mobile device style: fill the whole browser client area with the game canvas:
+        var meta = document.createElement('meta');
+        meta.name = 'viewport';
+        meta.content = 'width=device-width, height=device-height, initial-scale=1.0, user-scalable=no, shrink-to-fit=yes';
+        document.getElementsByTagName('head')[0].appendChild(meta);
       }
-      console.log('Unity WebGL Player initialized - direct loading');
+
+      loadingBar.style.display = "block";
+
+      var script = document.createElement("script");
+      script.src = loaderUrl;
+      script.onload = () => {
+        createUnityInstance(canvas, config, (progress) => {
+          progressBarFull.style.width = 100 * progress + "%";
+        }).then((unityInstance) => {
+          loadingBar.style.display = "none";
+        }).catch((message) => {
+          alert(message);
+        });
+      };
+      document.body.appendChild(script);
     </script>
   </body>
 </html>
